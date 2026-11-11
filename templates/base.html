@@ -1,0 +1,46 @@
+{% load static %}<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}KahDuke{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'css/kahduke.css' %}">
+  <link rel="icon" href="{% static 'img/favicon.svg' %}" type="image/svg+xml">
+  {% block head %}{% endblock %}
+</head>
+<body class="{% block body_class %}{% endblock %}">
+  {% block masthead %}
+  <header class="masthead">
+    <a class="wordmark" href="{% url 'home' %}">Kah<span>Duke</span></a>
+    <nav aria-label="Main">
+      <a href="{% url 'kwizzes:library' %}">Library</a>
+      <a href="{% url 'kwizzes:dashboard' %}">My kwizzes</a>
+      {% if user.is_authenticated %}
+        <a href="{% url 'kwizzes:bank' %}">Kwestion bank</a>
+        <form method="post" action="{% url 'account_logout' %}" class="inline">
+          {% csrf_token %}
+          <button type="submit" class="link">Sign out {{ user }}</button>
+        </form>
+      {% else %}
+        <a href="{% url 'account_login' %}">Sign in</a>
+      {% endif %}
+      <a class="nav-play" href="{% url 'join' %}">Join a game</a>
+    </nav>
+  </header>
+  {% endblock %}
+
+  {% if messages %}
+  <ul class="messages" role="status">
+    {% for message in messages %}<li class="message {{ message.tags }}">{{ message }}</li>{% endfor %}
+  </ul>
+  {% endif %}
+
+  <main class="{% block main_class %}page{% endblock %}">
+    {% block content %}{% endblock %}
+  </main>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

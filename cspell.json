@@ -1,0 +1,5 @@
+{
+  "version": "0.2",
+  "words": ["KahDuke", "Kahduke", "kahoot", "kwiz", "kwizzes", "kwestion", "kwestions", "shortcode", "shortcodes", "allauth", "daphne", "autobahn", "whitenoise", "ninja", "Bricolage", "Atkinson", "Hyperlegible"],
+  "ignorePaths": [".venv", "uv.lock", "*/migrations"]
+}

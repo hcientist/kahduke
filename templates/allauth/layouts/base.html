@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{# Puts allauth's sign-in, sign-up and account pages inside the KahDuke layout. #}
+{# allauth pages fill `content`, which base.html already places in <main>. #}
+
+{% block title %}{% block head_title %}{% endblock head_title %} · KahDuke{% endblock %}
+{% block head %}{% block extra_head %}{% endblock extra_head %}{% endblock %}
+{% block main_class %}page narrow account{% endblock %}
+{% block scripts %}{% block extra_body %}{% endblock extra_body %}{% endblock %}

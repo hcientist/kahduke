@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block title %}Library · KahDuke{% endblock %}
+
+{% block content %}
+<h1>Library</h1>
+<p class="lede">Public kwizzes anyone can host as-is, or remix into a copy of their own.</p>
+
+<form method="get" class="search" role="search">
+  <label for="q" class="visually-hidden">Search the library</label>
+  <input type="search" id="q" name="q" value="{{ q }}" placeholder="Search titles and descriptions">
+  <button type="submit" class="button quiet">Search</button>
+</form>
+
+{% if kwizzes %}
+  <ul class="kwiz-list">
+    {% for kwiz in kwizzes %}{% include "kwizzes/_kwiz_row.html" %}{% endfor %}
+  </ul>
+{% elif q %}
+  <p class="empty">Nothing matches “{{ q }}”. Try a shorter search, or <a href="{% url 'kwizzes:create' %}">write that kwiz yourself</a>.</p>
+{% else %}
+  <p class="empty">No public kwizzes yet. <a href="{% url 'kwizzes:create' %}">Write one</a> and set it to public to share it here.</p>
+{% endif %}
+{% endblock %}

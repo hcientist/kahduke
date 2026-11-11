@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block main_class %}page home{% endblock %}
+
+{% block content %}
+<section class="home-join" aria-labelledby="join-heading">
+  <h1 id="join-heading">Got a game code?</h1>
+  <form method="post" action="{% url 'join' %}" class="join-form">
+    {% csrf_token %}
+    <label for="id_shortcode">Game code</label>
+    {{ join_form.shortcode }}
+    <label for="id_nickname">Your name</label>
+    {{ join_form.nickname }}
+    <button type="submit" class="button primary">Join</button>
+  </form>
+</section>
+
+<section class="home-make">
+  <h2>Run your own</h2>
+  <p>Write a kwiz, put it on the projector, and let the class answer from their phones. Nobody needs an account, but having one keeps your kwizzes and your kwestion bank in one place.</p>
+  <p class="actions">
+    <a class="button" href="{% url 'kwizzes:create' %}">Write a kwiz</a>
+    <a class="button quiet" href="{% url 'kwizzes:library' %}">Host one from the library</a>
+  </p>
+</section>
+
+{% if featured %}
+<section>
+  <h2>In the library</h2>
+  <ul class="kwiz-list">
+    {% for kwiz in featured %}
+      {% include "kwizzes/_kwiz_row.html" %}
+    {% endfor %}
+  </ul>
+</section>
+{% endif %}
+{% endblock %}

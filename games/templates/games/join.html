@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block title %}Join a game · KahDuke{% endblock %}
+{% block body_class %}stage{% endblock %}
+{% block main_class %}stage-main join{% endblock %}
+
+{% block content %}
+<form method="post" class="join-form stage-card">
+  {% csrf_token %}
+  <h1>Join a game</h1>
+  {{ form.non_field_errors }}
+  <label for="id_shortcode">Game code</label>
+  {{ form.shortcode }}
+  {{ form.shortcode.errors }}
+  <label for="id_nickname">Your name</label>
+  {{ form.nickname }}
+  {{ form.nickname.errors }}
+  <button type="submit" class="button primary">Join</button>
+</form>
+{% endblock %}

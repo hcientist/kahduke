@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block title %}My kwizzes · KahDuke{% endblock %}
+
+{% block content %}
+<div class="kwiz-head">
+  <h1>My kwizzes</h1>
+  <p class="actions"><a class="button primary" href="{% url 'kwizzes:create' %}">Write a kwiz</a></p>
+</div>
+
+{% if not user.is_authenticated %}
+<p class="note">These are the kwizzes and games this browser remembers. <a href="{% url 'account_signup' %}">Create an account</a> and they'll move into it, so you can reach them from anywhere.</p>
+{% endif %}
+
+{% if kwizzes %}
+  <ul class="kwiz-list">
+    {% for kwiz in kwizzes %}{% include "kwizzes/_kwiz_row.html" %}{% endfor %}
+  </ul>
+{% else %}
+  <p class="empty">You haven't written a kwiz yet. <a href="{% url 'kwizzes:create' %}">Start one</a>, or remix one from the <a href="{% url 'kwizzes:library' %}">library</a>.</p>
+{% endif %}
+
+{% if games %}
+<h2>Games you hosted</h2>
+<ul class="kwiz-list">
+  {% for game in games %}
+  <li class="kwiz-row">
+    {% if game.status != "finished" %}
+      <a class="kwiz-row-title" href="{{ game.get_absolute_url }}">{{ game.kwiz }}</a>
+    {% else %}
+      <span class="kwiz-row-title">{{ game.kwiz }}</span>
+    {% endif %}
+    <span class="kwiz-row-meta">Code {{ game.shortcode }}, {{ game.get_status_display|lower }}, {{ game.created_at|date:"M j, g:i a" }}</span>
+  </li>
+  {% endfor %}
+</ul>
+{% endif %}
+
+{% if plays %}
+<h2>Games you played</h2>
+<ul class="kwiz-list">
+  {% for player in plays %}
+  <li class="kwiz-row">
+    <span class="kwiz-row-title">{{ player.game_session.kwiz }}</span>
+    <span class="kwiz-row-meta">As {{ player.nickname }}, {{ player.total_score }} points, {{ player.joined_at|date:"M j, g:i a" }}</span>
+  </li>
+  {% endfor %}
+</ul>
+{% endif %}
+{% endblock %}

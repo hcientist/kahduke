@@ -1,0 +1,7 @@
+<li class="kwiz-row">
+  <a class="kwiz-row-title" href="{{ kwiz.get_absolute_url }}">{{ kwiz.title }}</a>
+  <span class="kwiz-row-meta">
+    {{ kwiz.kwestion_count }} kwestion{{ kwiz.kwestion_count|pluralize }}{% if kwiz.owner %}, by {{ kwiz.owner }}{% endif %}{% if kwiz.remixed_from %}, remixed from <a href="{{ kwiz.remixed_from.get_absolute_url }}">{{ kwiz.remixed_from }}</a>{% endif %}
+  </span>
+  {% if kwiz.description %}<p class="kwiz-row-desc">{{ kwiz.description|truncatewords:30 }}</p>{% endif %}
+</li>

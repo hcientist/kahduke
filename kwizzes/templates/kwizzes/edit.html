@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Editing {{ kwiz.title }} · KahDuke{% endblock %}
+
+{% block content %}
+<h1>Edit kwiz</h1>
+<div id="editor"
+     data-kwiz-id="{{ kwiz.pk }}"
+     data-detail-url="{{ kwiz.get_absolute_url }}"
+     data-can-use-bank="{{ user.is_authenticated|yesno:'true,false' }}">
+  {% csrf_token %}
+  <p class="empty">Loading the editor…</p>
+</div>
+
+<template id="slot-template">
+  <li class="kwestion editing">
+    <div class="slot-tools">
+      <span class="slot-number"></span>
+      <button type="button" class="icon" data-act="up" aria-label="Move kwestion up">↑</button>
+      <button type="button" class="icon" data-act="down" aria-label="Move kwestion down">↓</button>
+      <button type="button" class="icon" data-act="remove" aria-label="Remove kwestion">✕</button>
+    </div>
+    <p class="shared-note" hidden></p>
+    <label>Kwestion <textarea data-f="prompt" rows="2" required></textarea></label>
+    <label>Image link (optional) <input type="url" data-f="media_url"></label>
+    <div class="field-row">
+      <label>Scoring
+        <select data-f="scoring_mode">
+          <option value="binary">Right or wrong</option>
+          <option value="scale">Partial credit</option>
+        </select>
+      </label>
+      <label>Points <input type="number" data-f="default_points" min="0" max="10000" step="100"></label>
+      <label>Seconds to answer <input type="number" data-f="default_time_limit_sec" min="5" max="240"></label>
+    </div>
+    <ol class="choice-list editing"></ol>
+    <button type="button" class="button quiet small" data-act="add-choice">Add answer choice</button>
+  </li>
+</template>
+
+<template id="choice-template">
+  <li class="choice editing">
+    <input type="text" data-f="body" aria-label="Answer choice" placeholder="Answer choice" required>
+    <label class="correct-toggle"><input type="checkbox" data-f="correct"> Correct</label>
+    <label class="credit-range">Credit
+      <input type="range" data-f="correctness" min="0" max="1" step="0.05">
+      <output></output>
+    </label>
+    <label class="choice-points">Points <input type="number" data-f="points" min="0" placeholder="auto"></label>
+    <button type="button" class="icon" data-act="choice-up" aria-label="Move choice up">↑</button>
+    <button type="button" class="icon" data-act="choice-remove" aria-label="Remove choice">✕</button>
+  </li>
+</template>
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'js/editor.js' %}" defer></script>
+{% endblock %}

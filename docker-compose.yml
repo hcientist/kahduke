@@ -1,0 +1,47 @@
+# Runs KahDuke in containers on your laptop the same way the course VM does:
+# Postgres for the database, Redis for the channel layer, Daphne for the app.
+#
+#   docker compose up --build        then open http://localhost:8000
+#
+# On the VM you don't use this file. The shared /srv/apps/docker-compose.yml
+# already has a `kahduke` stanza; see README.md for the one line to add there.
+
+name: kahduke
+
+services:
+  kahduke:
+    build: .
+    ports: ["8000:8000"]
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      DATABASE_URL: postgres://kahduke:kahduke@postgres:5432/kahduke
+      REDIS_URL: redis://redis:6379
+      ALLOWED_HOSTS: localhost,127.0.0.1
+      DEBUG: "False"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: kahduke
+      POSTGRES_PASSWORD: kahduke
+      POSTGRES_DB: kahduke
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kahduke -d kahduke"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  redis:
+    image: redis:7-alpine
+
+volumes:
+  pg_data:

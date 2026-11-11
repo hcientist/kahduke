@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ player.nickname }} · {{ game.kwiz }} · KahDuke{% endblock %}
+{% block body_class %}stage{% endblock %}
+{% block masthead %}{% endblock %}
+{% block main_class %}stage-main{% endblock %}
+
+{% block content %}
+<div id="game" data-role="player" data-shortcode="{{ game.shortcode }}" data-done-url="{% url 'home' %}">
+  <p class="stage-wait">Connecting…</p>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'js/game.js' %}" defer></script>
+{% endblock %}

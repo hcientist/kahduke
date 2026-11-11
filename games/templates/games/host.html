@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ game.shortcode }} · {{ game.kwiz }} · KahDuke{% endblock %}
+{% block body_class %}stage{% endblock %}
+{% block masthead %}{% endblock %}
+{% block main_class %}stage-main{% endblock %}
+
+{% block content %}
+<div id="game" data-role="host" data-shortcode="{{ game.shortcode }}" data-join-url="{{ join_url }}" data-done-url="{% url 'kwizzes:dashboard' %}">
+  <p class="stage-wait">Connecting…</p>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'js/game.js' %}" defer></script>
+{% endblock %}

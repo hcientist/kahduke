@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block title %}Kwestion bank · KahDuke{% endblock %}
+
+{% block content %}
+<h1>Kwestion bank</h1>
+<p class="lede">Every kwestion you've written or remixed. Add any of them to another kwiz from the editor. Editing a kwestion changes it in every kwiz that uses it.</p>
+
+<form method="get" class="search" role="search">
+  <label for="q" class="visually-hidden">Search your kwestions</label>
+  <input type="search" id="q" name="q" value="{{ q }}" placeholder="Search kwestions">
+  <button type="submit" class="button quiet">Search</button>
+</form>
+
+<ul class="kwestion-list">
+  {% for kwestion in kwestions %}
+  <li class="kwestion">
+    <p class="kwestion-prompt">{{ kwestion.prompt }}</p>
+    <p class="kwestion-meta">
+      {{ kwestion.default_points }} points, {{ kwestion.default_time_limit_sec }} seconds.
+      {% with kwizzes=kwestion.slots.all %}
+        {% if kwizzes %}Used in
+          {% for slot in kwizzes %}<a href="{{ slot.kwiz.get_absolute_url }}">{{ slot.kwiz }}</a>{% if not forloop.last %}, {% endif %}{% endfor %}.
+        {% else %}Not in any kwiz.{% endif %}
+      {% endwith %}
+    </p>
+    <ul class="choice-list">
+      {% for choice in kwestion.choices.all %}
+      <li class="choice{% if choice.is_correct %} correct{% endif %}">
+        <span class="meter" style="--fill: {{ choice.correctness }}" aria-hidden="true"></span>
+        <span class="choice-body">{{ choice.body }}</span>
+        <span class="choice-credit">{% widthratio choice.correctness 1 100 %}%</span>
+      </li>
+      {% endfor %}
+    </ul>
+  </li>
+  {% empty %}
+  <li class="empty">{% if q %}No kwestions match “{{ q }}”.{% else %}Your bank fills up as you write kwizzes. <a href="{% url 'kwizzes:create' %}">Write one</a>.{% endif %}</li>
+  {% endfor %}
+</ul>
+{% endblock %}
