@@ -120,6 +120,22 @@ The `Dockerfile` is the course's `Dockerfile.example` with these changes:
   (`/kwizzes/import/`). Every kwiz has a "Download .md" link, and its editors
   get "Edit as Markdown", which re-imports in place: kwestions and choices are
   matched by position, so earlier games keep their responses.
+- **GitHub repos.** The `repos` app lets a signed-in user link a GitHub repo,
+  or one folder of it (`/repos/`). KahDuke lists the `.md` files there
+  (README.md excluded), imports any of them as a kwiz, and remembers which
+  file each kwiz came from (`LinkedFile`). "Pull from GitHub" re-imports the
+  file in place. If the repo is linked with write access, "Commit to GitHub"
+  writes the kwiz back through the contents API, sending the last-seen blob
+  sha so GitHub refuses the commit if someone else changed the file. Access
+  is a fine-grained personal access token the user scopes to that one repo
+  (Contents: read-only, or read and write). A public repo needs no token to
+  read. `repos/github.py` is the whole GitHub client (stdlib `urllib`).
+
+  This is a proof of concept. Tokens are stored in plain text, so a real
+  deployment should encrypt them, or better, register a GitHub App: users
+  install it on chosen repos, and KahDuke mints short-lived installation
+  tokens instead of storing theirs. A push webhook could then pull changes
+  without anyone clicking "Pull".
 - **Live games.** `games/consumers.py` gives each screen one socket. The host
   sends `start`, `close`, `next` and `end`; players send `answer`. After every
   change the server tells each screen to refresh, and each one gets its own

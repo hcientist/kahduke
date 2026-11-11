@@ -29,6 +29,21 @@
   </div>
 </div>
 
+{% if can_edit and kwiz.repo_file %}{% with link=kwiz.repo_file %}
+<div class="note">
+  <p>Kept on GitHub as <a href="{{ link.html_url }}" target="_blank" rel="noopener">{{ link.repo.full_name }}/{{ link.file_path }}</a>{% if link.synced_at %}, last synced {{ link.synced_at|date:"M j, H:i" }}{% endif %}. Edits made here stay here until you commit them.</p>
+  {% if link.repo.owner_id == user.pk %}
+  <div class="actions">
+    <form method="post" action="{% url 'repos:pull' link.pk %}" class="inline">{% csrf_token %}<button type="submit" class="button small">Pull from GitHub</button></form>
+    {% if link.repo.can_write %}
+    <form method="post" action="{% url 'repos:push' link.pk %}" class="inline">{% csrf_token %}<button type="submit" class="button small">Commit to GitHub</button></form>
+    {% endif %}
+    <form method="post" action="{% url 'repos:unlink' link.pk %}" class="inline">{% csrf_token %}<button type="submit" class="button small quiet">Unlink</button></form>
+  </div>
+  {% endif %}
+</div>
+{% endwith %}{% endif %}
+
 {% if errors and can_edit %}
 <div class="note warn">
   <p>Before this kwiz can be hosted:</p>

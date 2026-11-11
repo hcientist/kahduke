@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block title %}GitHub repos · KahDuke{% endblock %}
+
+{% block content %}
+<h1>Kwizzes from GitHub</h1>
+<p class="lede">Keep your kwizzes as Markdown files in a GitHub repo. Link a repo, or one folder of it, and KahDuke can import each <code>.md</code> file as a kwiz and pull in later changes. If you give it write access, it can also commit your edits back.</p>
+
+{% if repos %}
+<ul class="kwiz-list">
+  {% for repo in repos %}
+  <li class="kwiz-row">
+    <a class="kwiz-row-title" href="{% url 'repos:detail' repo.pk %}">{{ repo }}</a>
+    <span class="kwiz-row-meta">{% if repo.can_write %}Read and write{% else %}Read only{% endif %}{% if not repo.token %}, public, no token{% endif %}, {{ repo.files.count }} linked kwiz{{ repo.files.count|pluralize:"zes" }}</span>
+  </li>
+  {% endfor %}
+</ul>
+{% endif %}
+
+<h2>Link a repo</h2>
+{% if form.non_field_errors %}
+<div class="note warn">{% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}</div>
+{% endif %}
+<form method="post" class="stack narrow-form">
+  {% csrf_token %}
+  {% for field in form %}
+  <div>
+    {% if field.name == "can_write" %}
+      <label>{{ field }} {{ field.label }}</label>
+    {% else %}
+      <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+      {{ field }}
+    {% endif %}
+    {% if field.help_text %}<p class="hint">{{ field.help_text }}</p>{% endif %}
+    {% for error in field.errors %}<p class="error">{{ error }}</p>{% endfor %}
+  </div>
+  {% endfor %}
+  <button type="submit" class="button primary">Link repo</button>
+</form>
+
+<details class="note">
+  <summary>Making a token for one repo</summary>
+  <ol>
+    <li>On GitHub, open Settings → Developer settings → <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">Fine-grained tokens → Generate new token</a>.</li>
+    <li>Under Repository access, choose <em>Only select repositories</em> and pick the repo.</li>
+    <li>Under Repository permissions, set <em>Contents</em> to <em>Read-only</em>, or to <em>Read and write</em> if KahDuke should commit to it.</li>
+    <li>Generate it and paste it above. KahDuke can only reach that repo, and you can revoke the token on GitHub at any time.</li>
+  </ol>
+</details>
+{% endblock %}
