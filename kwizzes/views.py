@@ -1,7 +1,8 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.db.models import Count, Q
-from django.http import Http404
+from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views.decorators.http import require_POST
@@ -9,6 +10,7 @@ from django.views.decorators.http import require_POST
 from games.forms import JoinForm
 from games.models import GameSession, Player
 
+from . import markdown
 from .access import (
     HOST_TOKENS,
     KWIZ_TOKENS,
@@ -18,7 +20,8 @@ from .access import (
     remember_token,
     session_tokens,
 )
-from .forms import KwizCreateForm
+from .editing import save_kwiz
+from .forms import KwizCreateForm, MarkdownImportForm
 from .models import Kwestion, Kwiz
 
 
@@ -157,3 +160,48 @@ def bank(request):
     if q:
         kwestions = kwestions.filter(prompt__icontains=q)
     return render(request, "kwizzes/bank.html", {"kwestions": kwestions, "q": q})
+
+
+def export_markdown(request, pk):
+    kwiz = _viewable_kwiz(request, pk)
+    response = HttpResponse(
+        markdown.render(kwiz), content_type="text/markdown; charset=utf-8"
+    )
+    if "download" in request.GET:
+        response["Content-Disposition"] = (
+            f'attachment; filename="{markdown.filename(kwiz)}"'
+        )
+    return response
+
+
+def import_markdown(request, pk=None):
+    """Make a new kwiz from Markdown, or (with pk) replace an existing one's."""
+    kwiz = _editable_kwiz(request, pk) if pk else None
+    initial = {"markdown": markdown.render(kwiz)} if kwiz else {}
+    form = MarkdownImportForm(
+        request.POST or None, request.FILES or None, initial=initial
+    )
+    problems = []
+    if request.method == "POST" and form.is_valid():
+        try:
+            data = markdown.parse(form.cleaned_data["markdown"])
+        except markdown.MarkdownError as e:
+            problems = e.errors
+        else:
+            owner = request.user if request.user.is_authenticated else None
+            target = kwiz or Kwiz(owner=owner)
+            if kwiz:
+                markdown.match_existing(kwiz, data)
+            try:
+                save_kwiz(target, data, request.user)
+            except (PermissionDenied, ValidationError) as e:
+                problems = e.messages if hasattr(e, "messages") else [str(e)]
+            else:
+                remember_token(request.session, KWIZ_TOKENS, target.edit_token)
+                messages.success(request, f"Imported “{target.title}”.")
+                return redirect(target)
+    return render(
+        request,
+        "kwizzes/import.html",
+        {"form": form, "kwiz": kwiz, "problems": problems},
+    )

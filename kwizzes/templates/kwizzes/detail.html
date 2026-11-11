@@ -19,7 +19,9 @@
     {% endif %}
     {% if can_edit %}
       <a class="button" href="{% url 'kwizzes:edit' kwiz.pk %}">Edit</a>
+      <a class="button quiet" href="{% url 'kwizzes:reimport' kwiz.pk %}">Edit as Markdown</a>
     {% endif %}
+    <a class="button quiet" href="{% url 'kwizzes:export' kwiz.pk %}?download">Download .md</a>
     <form method="post" action="{% url 'kwizzes:remix' kwiz.pk %}" class="inline">
       {% csrf_token %}
       <button type="submit" class="button quiet">Remix into my own copy</button>
