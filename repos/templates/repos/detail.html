@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block title %}{{ repo.full_name }} · KahDuke{% endblock %}
+
+{% block content %}
+<div class="kwiz-head">
+  <h1>{{ repo.full_name }}</h1>
+  <p class="kwiz-row-meta">
+    <a href="{{ repo.html_url }}" target="_blank" rel="noopener">{% if repo.path %}{{ repo.path }}/ on {% endif %}{{ repo.branch }}</a>,
+    {% if repo.can_write %}read and write{% else %}read only{% endif %}
+  </p>
+</div>
+
+{% if error %}
+<div class="note warn"><p>{{ error }}</p></div>
+{% endif %}
+
+<h2>Markdown files</h2>
+{% if rows %}
+<ul class="kwiz-list">
+  {% for row in rows %}
+  <li class="kwiz-row">
+    <a class="kwiz-row-title" href="{{ row.url }}" target="_blank" rel="noopener">{{ row.name }}</a>
+    {% if row.link %}
+      <span class="kwiz-row-meta">
+        Linked to <a href="{{ row.link.kwiz.get_absolute_url }}">{{ row.link.kwiz }}</a>{% if row.changed %}, changed on GitHub since {{ row.link.synced_at|date:"M j, H:i" }}{% endif %}
+      </span>
+      {% if row.changed %}
+      <form method="post" action="{% url 'repos:pull' row.link.pk %}" class="inline">
+        {% csrf_token %}<button type="submit" class="button small">Pull changes</button>
+      </form>
+      {% endif %}
+    {% else %}
+      <form method="post" action="{% url 'repos:import' repo.pk %}" class="inline">
+        {% csrf_token %}
+        <input type="hidden" name="file_path" value="{{ row.path }}">
+        <button type="submit" class="button small">Import as a kwiz</button>
+      </form>
+    {% endif %}
+  </li>
+  {% endfor %}
+</ul>
+{% elif not error %}
+<p class="empty">No <code>.md</code> files {% if repo.path %}in {{ repo.path }}/{% else %}in this repo{% endif %} yet (README.md doesn't count).</p>
+{% endif %}
+
+{% if missing %}
+<div class="note warn">
+  <p>These linked files aren't on GitHub any more:</p>
+  <ul>{% for link in missing %}<li>{{ link.file_path }}, linked to <a href="{{ link.kwiz.get_absolute_url }}">{{ link.kwiz }}</a></li>{% endfor %}</ul>
+</div>
+{% endif %}
+
+{% if repo.can_write %}
+<h2>Commit a kwiz to this repo</h2>
+{% if push_form.fields.kwiz.queryset.exists %}
+<form method="post" action="{% url 'repos:push_new' repo.pk %}" class="stack narrow-form">
+  {% csrf_token %}
+  {{ push_form.as_div }}
+  <button type="submit" class="button primary">Commit to {{ repo.path|default:"the repo root" }}</button>
+</form>
+{% else %}
+<p class="empty">All your kwizzes are already linked to a file.</p>
+{% endif %}
+{% endif %}
+
+<section class="danger-zone">
+  <form method="post" action="{% url 'repos:delete' repo.pk %}" class="inline"
+        onsubmit="return confirm('Unlink {{ repo.full_name|escapejs }}? Its kwizzes stay in KahDuke.');">
+    {% csrf_token %}
+    <button type="submit" class="button danger">Unlink this repo</button>
+  </form>
+</section>
+{% endblock %}
