@@ -1,5 +1,7 @@
 """Moving kwizzes between KahDuke and a linked GitHub repo."""
 
+import logging
+
 from django.db import transaction
 from django.utils import timezone
 
@@ -8,11 +10,17 @@ from kwizzes.editing import save_kwiz
 from kwizzes.models import Kwiz
 
 from . import github
-from .models import LinkedFile
+from .models import LinkedFile, Repo
+
+log = logging.getLogger(__name__)
+
+
+def list_files(repo):
+    return github.markdown_files(repo.full_name, repo.branch, repo.path, repo.token())
 
 
 def _read(repo, file_path):
-    return github.read_file(repo.full_name, repo.branch, file_path, repo.token)
+    return github.read_file(repo.full_name, repo.branch, file_path, repo.token())
 
 
 @transaction.atomic
@@ -42,8 +50,7 @@ def pull(link, user):
 def push(link):
     """Commit the kwiz to its file. GitHub rejects it if the file changed."""
     repo = link.repo
-    if not repo.can_write:
-        raise github.GitHubError("This repo is linked read-only.")
+    token = repo.token(write=True)
     verb = "Update" if link.sha else "Add"
     link.sha = github.write_file(
         repo.full_name,
@@ -52,7 +59,7 @@ def push(link):
         markdown.render(link.kwiz),
         f"{verb} kwiz “{link.kwiz.title}” from KahDuke",
         sha=link.sha,
-        token=repo.token,
+        token=token,
     )
     link.synced_at = timezone.now()
     if link.pk:
@@ -71,3 +78,38 @@ def push_new(repo, kwiz, file_name=""):
     link = LinkedFile(kwiz=kwiz, repo=repo, file_path=file_path)
     push(link)  # saves the link only once GitHub has the file
     return link
+
+
+def on_push(payload):
+    """Webhook: pull every linked kwiz whose file this push added or changed.
+
+    Returns how many kwizzes were updated. A file that no longer parses is
+    logged and skipped; its kwiz keeps its last good version.
+    """
+    ref = payload.get("ref", "")
+    if not ref.startswith("refs/heads/"):
+        return 0
+    branch = ref.removeprefix("refs/heads/")
+    full_name = payload.get("repository", {}).get("full_name", "")
+    installation_id = payload.get("installation", {}).get("id")
+    changed = set()
+    for commit in payload.get("commits", []):
+        changed.update(commit.get("added", []))
+        changed.update(commit.get("modified", []))
+    links = LinkedFile.objects.filter(
+        repo__in=Repo.objects.filter(
+            full_name__iexact=full_name,
+            branch=branch,
+            installation__installation_id=installation_id,
+        ),
+        file_path__in=changed,
+    ).select_related("repo__installation", "kwiz__owner")
+    updated = 0
+    for link in links:
+        try:
+            pull(link, link.kwiz.owner)
+        except (github.GitHubError, markdown.MarkdownError) as e:
+            log.warning("Webhook pull of %s failed: %s", link, e)
+        else:
+            updated += 1
+    return updated

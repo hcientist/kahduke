@@ -125,6 +125,20 @@ else:
     }
 
 
+# GitHub App (repos app)
+# Register an app as README.md describes, then set these. Leave them unset
+# and KahDuke can still read public repos, with no app at all.
+# GITHUB_APP_PRIVATE_KEY is the PEM, with newlines or with literal \n.
+
+GITHUB_APP = {
+    "SLUG": env("GITHUB_APP_SLUG", default=""),
+    "CLIENT_ID": env("GITHUB_APP_CLIENT_ID", default=""),
+    "CLIENT_SECRET": env("GITHUB_APP_CLIENT_SECRET", default=""),
+    "PRIVATE_KEY": env("GITHUB_APP_PRIVATE_KEY", default="").replace("\\n", "\n"),
+    "WEBHOOK_SECRET": env("GITHUB_APP_WEBHOOK_SECRET", default=""),
+}
+
+
 # Authentication
 
 AUTH_USER_MODEL = "accounts.User"

@@ -7,7 +7,8 @@
   <h1>{{ repo.full_name }}</h1>
   <p class="kwiz-row-meta">
     <a href="{{ repo.html_url }}" target="_blank" rel="noopener">{% if repo.path %}{{ repo.path }}/ on {% endif %}{{ repo.branch }}</a>,
-    {% if repo.can_write %}read and write{% else %}read only{% endif %}
+    {% if repo.can_write %}read and write{% else %}read only{% endif %},
+    {% if repo.installation %}through the KahDuke app on {{ repo.installation }}{% else %}public, without the app{% endif %}
   </p>
 </div>
 

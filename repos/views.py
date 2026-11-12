@@ -1,6 +1,18 @@
+import json
+import logging
+import secrets
+
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.http import (
+    Http404,
+    HttpResponse,
+    HttpResponseBadRequest,
+    HttpResponseNotFound,
+)
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
+from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
 from kwizzes.markdown import MarkdownError
@@ -8,7 +20,10 @@ from kwizzes.models import Kwiz
 
 from . import github, sync
 from .forms import PushNewForm, RepoForm
-from .models import LinkedFile, Repo
+from .models import Installation, LinkedFile, Repo
+
+log = logging.getLogger(__name__)
+OAUTH_STATE = "github_oauth_state"
 
 
 def _repo(request, pk):
@@ -45,8 +60,25 @@ def repo_list(request):
         repo = form.save()
         messages.success(request, f"Linked {repo}.")
         return redirect("repos:detail", pk=repo.pk)
-    repos = request.user.repos.all()
-    return render(request, "repos/list.html", {"form": form, "repos": repos})
+    repos = request.user.repos.select_related("installation")
+    installations = list(request.user.github_installations.all())
+    for installation in installations:
+        try:
+            installation.repo_names = github.installation_repos(
+                installation.installation_id
+            )
+        except github.GitHubError as e:
+            installation.error = str(e)
+    return render(
+        request,
+        "repos/list.html",
+        {
+            "form": form,
+            "repos": repos,
+            "installations": installations,
+            "app_enabled": github.app_enabled(),
+        },
+    )
 
 
 @login_required
@@ -55,9 +87,7 @@ def detail(request, pk):
     links = {link.file_path: link for link in repo.files.select_related("kwiz")}
     files, error = [], ""
     try:
-        files = github.markdown_files(
-            repo.full_name, repo.branch, repo.path, repo.token
-        )
+        files = sync.list_files(repo)
     except github.GitHubError as e:
         error = str(e)
     rows = [
@@ -168,3 +198,108 @@ def unlink(request, pk):
     link.delete()
     messages.success(request, f"“{link.kwiz.title}” is no longer linked to GitHub.")
     return redirect(link.kwiz)
+
+
+# --- The GitHub App: install, sign in, webhook ---------------------------
+
+
+def _callback_uri(request):
+    return request.build_absolute_uri(reverse("repos:github_callback"))
+
+
+def _new_state(request):
+    state = secrets.token_urlsafe(24)
+    request.session[OAUTH_STATE] = state
+    return state
+
+
+@login_required
+def github_install(request):
+    """Send the user to GitHub to install the app on chosen repos.
+
+    The app asks GitHub to have the user authorize it during installation,
+    so GitHub comes back to github_callback with an OAuth code.
+    """
+    if not github.app_enabled():
+        raise Http404
+    return redirect(github.install_url(_new_state(request)))
+
+
+@login_required
+def github_connect(request):
+    """Sign in with GitHub to pick up installations that already exist."""
+    if not github.app_enabled():
+        raise Http404
+    return redirect(github.authorize_url(_new_state(request), _callback_uri(request)))
+
+
+@login_required
+def github_callback(request):
+    """Learn which installations this user can access, as GitHub says.
+
+    The installation_id GitHub appends to the URL is never trusted on its
+    own (anyone could type one in); only /user/installations, asked with
+    the user's own OAuth token, decides.
+    """
+    if not github.app_enabled():
+        raise Http404
+    code = request.GET.get("code", "")
+    state = request.GET.get("state", "")
+    expected = request.session.pop(OAUTH_STATE, None)
+    if not code or not expected or not secrets.compare_digest(state, expected):
+        if request.GET.get("installation_id") and code:
+            # Installs started on GitHub's site carry no state of ours; sign
+            # in again (GitHub skips the prompt) to get a code we can trust.
+            return redirect("repos:github_connect")
+        messages.error(request, "That GitHub sign-in didn't come from here. Try again.")
+        return redirect("repos:list")
+    try:
+        user_token = github.exchange_code(code, _callback_uri(request))
+        found = github.user_installations(user_token)
+    except github.GitHubError as e:
+        messages.error(request, str(e))
+        return redirect("repos:list")
+
+    mine = []
+    for data in found:
+        installation, _ = Installation.objects.update_or_create(
+            installation_id=data["id"],
+            defaults={
+                "account_login": data["account"]["login"],
+                "account_type": data["account"].get("type", ""),
+            },
+        )
+        mine.append(installation)
+    request.user.github_installations.set(mine)
+    if mine:
+        names = ", ".join(i.account_login for i in mine)
+        messages.success(request, f"KahDuke can use its GitHub App on: {names}.")
+    else:
+        messages.warning(
+            request, "The KahDuke app isn't installed anywhere you can see."
+        )
+    return redirect("repos:list")
+
+
+@csrf_exempt
+@require_POST
+def github_webhook(request):
+    if not github.app_settings()["WEBHOOK_SECRET"]:
+        return HttpResponseNotFound()
+    if not github.verify_webhook(
+        request.body, request.headers.get("X-Hub-Signature-256", "")
+    ):
+        return HttpResponse(status=401)
+    try:
+        payload = json.loads(request.body)
+    except ValueError:
+        return HttpResponseBadRequest()
+    event = request.headers.get("X-GitHub-Event", "")
+    if event == "push":
+        updated = sync.on_push(payload)
+        return HttpResponse(f"updated {updated}")
+    if event == "installation" and payload.get("action") == "deleted":
+        Installation.objects.filter(
+            installation_id=payload["installation"]["id"]
+        ).delete()
+    return HttpResponse("ok")

@@ -6,12 +6,36 @@
 <h1>Kwizzes from GitHub</h1>
 <p class="lede">Keep your kwizzes as Markdown files in a GitHub repo. Link a repo, or one folder of it, and KahDuke can import each <code>.md</code> file as a kwiz and pull in later changes. If you give it write access, it can also commit your edits back.</p>
 
+{% if app_enabled %}
+<section class="note">
+  <h2>The KahDuke GitHub App</h2>
+  {% if installations %}
+  <p>KahDuke can use the app on:</p>
+  <ul>
+    {% for installation in installations %}
+    <li>
+      <strong>{{ installation }}</strong>
+      (<a href="{{ installation.settings_url }}" target="_blank" rel="noopener">choose repos</a>):
+      {% if installation.error %}{{ installation.error }}{% else %}{{ installation.repo_names|join:", "|default:"no repos yet" }}{% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p>Install the app to link private repos, or to let KahDuke commit kwizzes. You choose which repos it can see. KahDuke never stores a GitHub token: it asks for one that lasts an hour, covers one repo, and allows only reading unless it's committing.</p>
+  {% endif %}
+  <div class="actions">
+    <a class="button primary small" href="{% url 'repos:github_install' %}">Install on {% if installations %}another account or more repos{% else %}GitHub{% endif %}</a>
+    <a class="button quiet small" href="{% url 'repos:github_connect' %}">Already installed? Sign in with GitHub</a>
+  </div>
+</section>
+{% endif %}
+
 {% if repos %}
 <ul class="kwiz-list">
   {% for repo in repos %}
   <li class="kwiz-row">
     <a class="kwiz-row-title" href="{% url 'repos:detail' repo.pk %}">{{ repo }}</a>
-    <span class="kwiz-row-meta">{% if repo.can_write %}Read and write{% else %}Read only{% endif %}{% if not repo.token %}, public, no token{% endif %}, {{ repo.files.count }} linked kwiz{{ repo.files.count|pluralize:"zes" }}</span>
+    <span class="kwiz-row-meta">{% if repo.can_write %}Read and write{% else %}Read only{% endif %}, {% if repo.installation %}through the app on {{ repo.installation }}{% else %}public{% endif %}, {{ repo.files.count }} linked kwiz{{ repo.files.count|pluralize:"zes" }}</span>
   </li>
   {% endfor %}
 </ul>
@@ -38,13 +62,5 @@
   <button type="submit" class="button primary">Link repo</button>
 </form>
 
-<details class="note">
-  <summary>Making a token for one repo</summary>
-  <ol>
-    <li>On GitHub, open Settings → Developer settings → <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">Fine-grained tokens → Generate new token</a>.</li>
-    <li>Under Repository access, choose <em>Only select repositories</em> and pick the repo.</li>
-    <li>Under Repository permissions, set <em>Contents</em> to <em>Read-only</em>, or to <em>Read and write</em> if KahDuke should commit to it.</li>
-    <li>Generate it and paste it above. KahDuke can only reach that repo, and you can revoke the token on GitHub at any time.</li>
-  </ol>
-</details>
+<p class="hint">Public repos work without the app, read-only. For a private repo, or to commit, install the app on the repo's owner first; KahDuke uses it automatically.</p>
 {% endblock %}

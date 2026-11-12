@@ -96,6 +96,40 @@ The `Dockerfile` is the course's `Dockerfile.example` with these changes:
   Linux wheel for 3.15 yet and has to be built from source;
 - no `REDIS_URL` placeholder, because it's optional in `settings.py`.
 
+## Set up the GitHub App
+
+Only needed for private repos and committing; public repos work without it.
+
+1. On GitHub, go to Settings → Developer settings → GitHub Apps → New GitHub
+   App (or the same under an organization's settings).
+2. Fill in, replacing the host with yours:
+   - **Homepage URL:** `https://kahduke.example.edu`
+   - **Callback URL:** `https://kahduke.example.edu/repos/github/callback/`
+   - **Request user authorization (OAuth) during installation:** on
+   - **Webhook:** active, URL `https://kahduke.example.edu/repos/github/webhook/`,
+     and a long random secret
+   - **Repository permissions:** Contents: *Read and write* (Metadata: read
+     is added for you). KahDuke still asks for read-only tokens except when
+     committing.
+   - **Subscribe to events:** Push
+   - **Where can this GitHub App be installed?** Any account, so students
+     can install it on their own repos.
+3. Create it, then generate a private key and a client secret.
+4. Set these in the server's environment:
+
+   ```sh
+   GITHUB_APP_SLUG=kahduke            # from the app's public URL
+   GITHUB_APP_CLIENT_ID=Iv23li...
+   GITHUB_APP_CLIENT_SECRET=...
+   GITHUB_APP_PRIVATE_KEY="-----BEGIN RSA PRIVATE KEY-----\n...\n-----END RSA PRIVATE KEY-----"
+   GITHUB_APP_WEBHOOK_SECRET=...      # optional; no secret, no webhook
+   ```
+
+   The private key can have real newlines or literal `\n`s.
+
+Users then use **GitHub → Install on GitHub** to choose repos, or **Sign in
+with GitHub** if the app is already installed on an account they belong to.
+
 ## How it fits together
 
 | App | What it owns |
@@ -124,18 +158,21 @@ The `Dockerfile` is the course's `Dockerfile.example` with these changes:
   or one folder of it (`/repos/`). KahDuke lists the `.md` files there
   (README.md excluded), imports any of them as a kwiz, and remembers which
   file each kwiz came from (`LinkedFile`). "Pull from GitHub" re-imports the
-  file in place. If the repo is linked with write access, "Commit to GitHub"
-  writes the kwiz back through the contents API, sending the last-seen blob
-  sha so GitHub refuses the commit if someone else changed the file. Access
-  is a fine-grained personal access token the user scopes to that one repo
-  (Contents: read-only, or read and write). A public repo needs no token to
-  read. `repos/github.py` is the whole GitHub client (stdlib `urllib`).
+  file in place. For a repo linked with write access, "Commit to GitHub"
+  writes the kwiz back. The commit sends the last-seen blob sha, so GitHub
+  refuses it if someone else changed the file in the meantime.
 
-  This is a proof of concept. Tokens are stored in plain text, so a real
-  deployment should encrypt them, or better, register a GitHub App: users
-  install it on chosen repos, and KahDuke mints short-lived installation
-  tokens instead of storing theirs. A push webhook could then pull changes
-  without anyone clicking "Pull".
+  Public repos can be read with no setup. Private repos, and committing, go
+  through the KahDuke GitHub App (see below). KahDuke stores no GitHub
+  tokens. For each request it signs a JWT with the app's key, and asks for an
+  installation token covering just that repo with Contents `read`, or
+  `write` only while committing to a repo linked for writing. Tokens are
+  cached for the 50 minutes before they expire. A user proves they may use an
+  installation by signing in with GitHub: `/user/installations`, asked with
+  their own token, decides, never an `installation_id` in a URL. A push
+  webhook pulls linked kwizzes whose files changed. `repos/github.py` is the
+  whole GitHub client (stdlib `urllib` plus PyJWT).
+
 - **Live games.** `games/consumers.py` gives each screen one socket. The host
   sends `start`, `close`, `next` and `end`; players send `answer`. After every
   change the server tells each screen to refresh, and each one gets its own
