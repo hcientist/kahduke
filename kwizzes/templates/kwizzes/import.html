@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block title %}{% if kwiz %}Import into {{ kwiz.title }}{% else %}Import a kwiz{% endif %} · KahDuke{% endblock %}
+
+{% block content %}
+<h1>{% if kwiz %}Replace “{{ kwiz.title }}” from Markdown{% else %}Import a kwiz from Markdown{% endif %}</h1>
+{% if kwiz %}
+<p class="lede">This is the kwiz as Markdown now. Edit it and save to replace the kwiz. Kwestions are matched up by position, so earlier games keep their answers.</p>
+{% else %}
+<p class="lede">Paste a kwiz written in Markdown, or upload a .md file.{% if not user.is_authenticated %} This browser will remember it, the same as a kwiz you write here.{% endif %}</p>
+{% endif %}
+
+{% if problems or form.non_field_errors %}
+<div class="note warn">
+  <p>That Markdown didn't import:</p>
+  <ul>
+    {% for error in form.non_field_errors %}<li>{{ error }}</li>{% endfor %}
+    {% for problem in problems %}<li>{{ problem }}</li>{% endfor %}
+  </ul>
+</div>
+{% endif %}
+
+<form method="post" enctype="multipart/form-data" class="stack">
+  {% csrf_token %}
+  <div><label for="{{ form.markdown.id_for_label }}">Markdown</label>{{ form.markdown }}</div>
+  <div><label for="{{ form.file.id_for_label }}">{{ form.file.label }}</label> {{ form.file }}</div>
+  <p class="actions">
+    <button type="submit" class="button primary">{% if kwiz %}Replace the kwiz{% else %}Import{% endif %}</button>
+    {% if kwiz %}<a class="button quiet" href="{{ kwiz.get_absolute_url }}">Cancel</a>{% endif %}
+  </p>
+</form>
+
+<details class="note">
+  <summary>The format</summary>
+<pre class="mono">---
+visibility: public        # or private (the default)
+reveal: full              # or counts, hidden
+---
+
+# Sorting warm-up
+
+Paragraphs here become the description.
+
+## Which sort is stable?
+More prompt text can go on the next lines.
+![a picture](https://example.com/sorts.png)
+{points=2000 time=30 reveal=counts}
+
+- [ ] Quicksort
+- [x] Merge sort
+- [0.5] Heapsort, if you squint
+- [ ] Selection sort {points=100}</pre>
+  <p>Each <code>## </code> heading starts a kwestion. <code>[x]</code> is right, <code>[ ]</code> is wrong, and a number between 0 and 1 gives partial credit. The <code>{…}</code> line is optional: points (default 1000), time in seconds (default 20), <code>scoring=scale</code>, and reveal. On a choice, <code>{points=…}</code> sets that choice's own points.</p>
+</details>
+{% endblock %}
