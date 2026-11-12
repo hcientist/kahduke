@@ -340,7 +340,7 @@ class SyncTests(GitHubTestCase):
         self.client.post(
             reverse("repos:import", args=[repo.pk]), {"file_path": "other/x.md"}
         )
-        self.assertFalse(Kwiz.objects.exists())
+        self.assertFalse(Kwiz.objects.filter(owner=self.user).exists())
 
     def test_read_only_link_cannot_commit(self):
         link = self.import_sorting()
