@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AnonymousUser
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -106,6 +107,10 @@ class ParseTests(TestCase):
 
 
 class ViewTests(TestCase):
+    def setUp(self):
+        # Start without the demo kwiz that migration 0003 seeds.
+        Kwiz.objects.all().delete()
+
     def test_import_creates_an_anonymous_kwiz(self):
         response = self.client.post(reverse("kwizzes:import"), {"markdown": SAMPLE})
         kwiz = Kwiz.objects.get()
@@ -174,3 +179,14 @@ class ViewTests(TestCase):
             reverse("kwizzes:reimport", args=[kwiz.pk]), {"markdown": SAMPLE}
         )
         self.assertEqual(response.status_code, 404)
+
+
+class BridgeOfDeathTests(TestCase):
+    """The demo kwiz seeded by migration 0003 and its Markdown twin."""
+
+    def test_example_file_matches_the_migrated_kwiz(self):
+        kwiz = Kwiz.objects.get(title="The Bridge of Death", owner=None)
+        path = settings.BASE_DIR / "examples" / "bridge-of-death.md"
+        self.assertEqual(markdown.render(kwiz), path.read_text())
+        self.assertEqual(kwiz.playability_errors(), [])
+        self.assertTrue(kwiz.is_public)
