@@ -356,5 +356,6 @@ def render(kwiz):
 
 
 def filename(kwiz):
-    slug = re.sub(r"[^a-z0-9]+", "-", kwiz.title.lower()).strip("-")
+    title = re.sub(r"['’]", "", kwiz.title.lower())
+    slug = re.sub(r"[^a-z0-9]+", "-", title).strip("-")
     return f"{slug or 'kwiz'}.md"

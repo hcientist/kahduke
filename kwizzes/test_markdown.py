@@ -181,12 +181,24 @@ class ViewTests(TestCase):
         self.assertEqual(response.status_code, 404)
 
 
-class BridgeOfDeathTests(TestCase):
-    """The demo kwiz seeded by migration 0003 and its Markdown twin."""
+class DemoKwizTests(TestCase):
+    """The demo kwizzes seeded by migrations 0003 and 0004, and their
+    Markdown twins in examples/."""
 
-    def test_example_file_matches_the_migrated_kwiz(self):
-        kwiz = Kwiz.objects.get(title="The Bridge of Death", owner=None)
-        path = settings.BASE_DIR / "examples" / "bridge-of-death.md"
+    def assert_matches_example(self, title, file_name):
+        kwiz = Kwiz.objects.get(title=title, owner=None)
+        path = settings.BASE_DIR / "examples" / file_name
         self.assertEqual(markdown.render(kwiz), path.read_text())
+        self.assertEqual(markdown.parse(path.read_text()).title, title)
         self.assertEqual(kwiz.playability_errors(), [])
         self.assertTrue(kwiz.is_public)
+
+    def test_bridge_of_death(self):
+        self.assert_matches_example("The Bridge of Death", "bridge-of-death.md")
+
+    def test_shes_a_witch(self):
+        self.assert_matches_example("She's a Witch!", "shes-a-witch.md")
+
+    def test_filename_drops_apostrophes(self):
+        kwiz = Kwiz.objects.get(title="She's a Witch!")
+        self.assertEqual(markdown.filename(kwiz), "shes-a-witch.md")
