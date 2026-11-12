@@ -130,6 +130,48 @@ Only needed for private repos and committing; public repos work without it.
 Users then use **GitHub → Install on GitHub** to choose repos, or **Sign in
 with GitHub** if the app is already installed on an account they belong to.
 
+## Social sign-in
+
+The sign-in page offers **Sign in with GitHub** and **Sign in with Canvas**
+for each provider that's configured (django-allauth's `socialaccount`).
+Anonymous work in the browser is claimed on social sign-in the same way as on
+password sign-in. Signed-in users can connect either provider to an existing
+account at `/accounts/3rdparty/`.
+
+### GitHub
+
+GitHub sign-in reuses the KahDuke GitHub App's client ID and secret, so
+there is nothing new to register. In the app's settings:
+
+- add a second **Callback URL**: `https://kahduke.example.edu/accounts/github/login/callback/`
+- under **Account permissions**, set **Email addresses** to *Read-only*.
+  Without it, sign-in still works but the user types their email on the
+  sign-up form.
+
+Because the token is an app user token, signing in with GitHub also records
+which app installations the user can access, skipping the separate "Sign in
+with GitHub" step on the GitHub repos page. To use a separate OAuth app
+instead, set `GITHUB_LOGIN_CLIENT_ID` and `GITHUB_LOGIN_CLIENT_SECRET`.
+
+### Canvas, through the Canvas API proxy
+
+`accounts/canvasproxy` is a small allauth provider for
+[canvas-proxy](https://github.com/hcientist/canvas-proxy), so KahDuke needs
+no Canvas developer key of its own:
+
+1. On the proxy, register an app on the **auth_only** tier, as a
+   confidential client, with the redirect URI
+   `https://kahduke.example.edu/accounts/canvasproxy/login/callback/`, and
+   approve it.
+2. Set `CANVAS_PROXY_URL` (e.g. `https://canvas.example.edu`),
+   `CANVAS_PROXY_CLIENT_ID` and `CANVAS_PROXY_CLIENT_SECRET`.
+
+At sign-in, KahDuke reads `/api/v1/users/self/profile` through the proxy for
+the name, login and email, then revokes the token. Accounts are keyed by the
+Canvas `global_id`. The Canvas email is not treated as verified, because
+students can change it, so it never merges into an existing KahDuke account
+by itself.
+
 ## How it fits together
 
 | App | What it owns |
