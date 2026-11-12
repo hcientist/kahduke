@@ -5,4 +5,6 @@ class AccountsConfig(AppConfig):
     name = "accounts"
 
     def ready(self):
-        from . import signals  # noqa: F401
+        from . import github_emails, signals  # noqa: F401
+
+        github_emails.install()

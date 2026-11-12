@@ -10,7 +10,7 @@ from kwizzes.editing import save_kwiz
 from kwizzes.models import Kwiz
 
 from . import github
-from .models import LinkedFile, Repo
+from .models import Installation, LinkedFile, Repo
 
 log = logging.getLogger(__name__)
 
@@ -113,3 +113,21 @@ def on_push(payload):
         else:
             updated += 1
     return updated
+
+
+def remember_installations(user, found):
+    """Record the installations GitHub listed for `user` (from
+    /user/installations, asked with the user's own token) as the ones they
+    may use, replacing any earlier list. Returns them."""
+    mine = []
+    for data in found:
+        installation, _ = Installation.objects.update_or_create(
+            installation_id=data["id"],
+            defaults={
+                "account_login": data["account"]["login"],
+                "account_type": data["account"].get("type", ""),
+            },
+        )
+        mine.append(installation)
+    user.github_installations.set(mine)
+    return mine

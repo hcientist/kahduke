@@ -260,17 +260,7 @@ def github_callback(request):
         messages.error(request, str(e))
         return redirect("repos:list")
 
-    mine = []
-    for data in found:
-        installation, _ = Installation.objects.update_or_create(
-            installation_id=data["id"],
-            defaults={
-                "account_login": data["account"]["login"],
-                "account_type": data["account"].get("type", ""),
-            },
-        )
-        mine.append(installation)
-    request.user.github_installations.set(mine)
+    mine = sync.remember_installations(request.user, found)
     if mine:
         names = ", ".join(i.account_login for i in mine)
         messages.success(request, f"KahDuke can use its GitHub App on: {names}.")
