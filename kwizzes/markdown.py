@@ -5,6 +5,7 @@ The format, all of it optional except at least a title:
     ---
     visibility: public          # private (default) | public
     reveal: full                # full (default) | counts | hidden
+    players: full               # full (default) | answers | shapes
     ---
 
     # Sorting warm-up
@@ -28,6 +29,10 @@ kwestion's points, seconds to answer, scoring and reveal mode; on a choice it
 sets that choice's own points. An image on its own line in a kwestion, or at
 the end of a choice, becomes that item's media link.
 
+`players:` is how much each phone shows: the kwestion and its answers
+(`full`), just the answers (`answers`), or just the four shapes (`shapes`),
+leaving the rest to the projector.
+
 The frontmatter is a flat `key: value` list rather than YAML, so there is no
 YAML dependency. `title:` and `description:` work there too, if you'd rather
 not use the `# ` heading.
@@ -45,7 +50,7 @@ DEFAULT_TIME = KwestionIn.model_fields["default_time_limit_sec"].default
 ATTRS = re.compile(r"\{([^{}]*)\}\s*$")
 IMAGE = re.compile(r"!\[[^\]]*\]\(\s*(\S+?)\s*\)\s*$")
 CHOICE = re.compile(r"^\s*[-*+]\s+\[\s*([xX]|[01](?:\.\d+)?|\.\d+)?\s*\]\s+(.*)$")
-KWIZ_KEYS = {"title", "description", "visibility", "reveal"}
+KWIZ_KEYS = {"title", "description", "visibility", "reveal", "players"}
 KWESTION_KEYS = {"points", "time", "scoring", "reveal"}
 CHOICE_KEYS = {"points"}
 
@@ -275,6 +280,7 @@ def parse(text):
         "description": "\n".join(description).strip(),
         "visibility": settings.get("visibility", "private").lower(),
         "reveal_mode": settings.get("reveal", "full").lower(),
+        "player_screen": settings.get("players", "full").lower(),
         "slots": slots,
     }
     if errors:
@@ -317,6 +323,7 @@ def render(kwiz):
         "---",
         f"visibility: {kwiz.visibility}",
         f"reveal: {kwiz.reveal_mode}",
+        f"players: {kwiz.player_screen}",
         "---",
         "",
         f"# {kwiz.title}",

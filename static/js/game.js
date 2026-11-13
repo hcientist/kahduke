@@ -246,6 +246,11 @@
 
   // Player ------------------------------------------------------------------
 
+  // A choice's text, or nothing when the kwiz shows only shapes on phones.
+  function body(choice) {
+    return choice?.body ? h("span", {}, choice.body) : null;
+  }
+
   function playerLobby(state) {
     show(h("section", { class: "stage-card" },
       h("h1", {}, `You're in, ${state.me.nickname}`),
@@ -258,16 +263,19 @@
     if (state.me.answered_choice_id != null) {
       const i = k.choices.findIndex((c) => c.id === state.me.answered_choice_id);
       show(h("section", { class: "stage-card" },
-        h("p", { class: `locked tile tile-${i % 4}` }, shape(i), h("span", {}, k.choices[i]?.body)),
+        h("p", { class: `locked tile tile-${i % 4}` }, shape(i), body(k.choices[i])),
         h("h1", {}, "Answer locked in"),
         h("p", {}, `${state.answered} of ${state.player_count} answered`)));
       return;
     }
     const clock = countdown(k);
+    // The kwiz may keep the kwestion (and even the answers) off phones, so
+    // the room reads them on the projector.
+    const shapesOnly = k.choices.every((c) => !c.body);
     show(
       clock.wrap,
-      h("p", { class: "player-prompt" }, k.prompt),
-      h("div", { class: "tiles player-tiles" },
+      h("p", { class: "player-prompt" }, k.prompt || "Read the kwestion on the main screen"),
+      h("div", { class: `tiles player-tiles${shapesOnly ? " shapes-only" : ""}` },
         k.choices.map((c, i) => h("button", {
           class: `tile tile-${i % 4}`,
           onclick: (e) => {
@@ -275,7 +283,8 @@
             e.currentTarget.classList.add("chosen");
             send("answer", { choice_id: c.id });
           },
-        }, shape(i), h("span", {}, c.body)))),
+          "aria-label": c.body ? null : `Answer ${i + 1}, the ${SHAPES[i % SHAPES.length]}`,
+        }, shape(i), body(c)))),
     );
     clock.start();
   }
@@ -287,7 +296,7 @@
       const k = state.kwestion;
       const i = k.choices.findIndex((c) => c.id === me.answered_choice_id);
       show(h("section", { class: "stage-card" },
-        i >= 0 ? h("p", { class: `locked tile tile-${i % 4}` }, shape(i), h("span", {}, k.choices[i].body)) : null,
+        i >= 0 ? h("p", { class: `locked tile tile-${i % 4}` }, shape(i), body(k.choices[i])) : null,
         h("h1", {}, i >= 0 ? "Answer recorded" : "Time's up"),
         state.reveal_mode === "counts" ? revealTiles(k, state, "player-counts") : null,
         standing(state)));

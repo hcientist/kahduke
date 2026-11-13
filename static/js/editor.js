@@ -46,6 +46,13 @@
     ["hidden", "Show nothing"],
   ];
 
+  // Must match kwizzes.models.PlayerScreen.
+  const PLAYER_SCREENS = [
+    ["full", "The kwestion and its answers"],
+    ["answers", "Only the answers (the kwestion is on the main screen)"],
+    ["shapes", "Only the answer shapes (everything else is on the main screen)"],
+  ];
+
   const blankSlot = () => ({
     id: null,
     kwestion_id: null,
@@ -98,6 +105,12 @@
             `<label><input type="radio" name="reveal_mode" value="${value}"> ${label}</label>`).join("")}
           <p class="hint">Only the first option says who got it right, so kwestions set to the others don't add to anyone's score. You can change this for a single kwestion below.</p>
         </fieldset>
+        <fieldset class="visibility">
+          <legend>On players' phones, show</legend>
+          ${PLAYER_SCREENS.map(([value, label]) =>
+            `<label><input type="radio" name="player_screen" value="${value}"> ${label}</label>`).join("")}
+          <p class="hint">Showing less keeps eyes on the projector, and keeps a phone from giving anything away.</p>
+        </fieldset>
       </form>
       <ol class="kwestion-list editing"></ol>
       <p class="actions">
@@ -123,6 +136,7 @@
     meta.elements.description.value = kwiz.description;
     meta.querySelector(`[name=visibility][value=${kwiz.visibility}]`).checked = true;
     meta.querySelector(`[name=reveal_mode][value=${kwiz.reveal_mode}]`).checked = true;
+    meta.querySelector(`[name=player_screen][value=${kwiz.player_screen}]`).checked = true;
     meta.addEventListener("input", (e) => {
       kwiz[e.target.name] = e.target.value;
       markDirty();
@@ -324,6 +338,7 @@
       description: kwiz.description,
       visibility: kwiz.visibility,
       reveal_mode: kwiz.reveal_mode,
+      player_screen: kwiz.player_screen,
       slots: kwiz.slots.map((s) => ({
         id: s.id,
         kwestion_id: s.kwestion_id,

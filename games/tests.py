@@ -9,7 +9,7 @@ from django.utils import timezone
 
 from kahduke_config.asgi import application
 from kwizzes.access import HOST_TOKENS, PLAYER_TOKENS
-from kwizzes.models import Kwiz, RevealMode
+from kwizzes.models import Kwiz, PlayerScreen, RevealMode
 from kwizzes.tests import make_kwiz
 
 from .models import GameSession, Player, score
@@ -145,6 +145,43 @@ class RevealModeTests(TestCase):
         # The leaderboard stays (later kwestions score) but hasn't moved.
         self.assertTrue(state["scored"])
         self.assertEqual(state["leaderboard"][0]["score"], 0)
+
+
+class PlayerScreenTests(TestCase):
+    """A kwiz can keep the kwestion, or the answers too, off players' phones."""
+
+    def kwestion_for(self, player_screen):
+        kwiz = make_kwiz(player_screen=player_screen)
+        game = GameSession.start_for(kwiz)
+        alice = Player.objects.create(game_session=game, nickname="alice")
+        game.advance()
+        return snapshot(game.pk)["kwestion"], snapshot(game.pk, player=alice)
+
+    def test_full_shows_everything(self):
+        host, player = self.kwestion_for(PlayerScreen.FULL)
+        for key in ("prompt", "choices"):
+            self.assertEqual(player["kwestion"][key], host[key])
+        self.assertEqual(player["player_screen"], "full")
+
+    def test_answers_only_drops_the_prompt(self):
+        host, player = self.kwestion_for(PlayerScreen.ANSWERS)
+        self.assertTrue(host["prompt"])
+        self.assertEqual(player["kwestion"]["prompt"], "")
+        self.assertEqual(player["kwestion"]["choices"], host["choices"])
+
+    def test_shapes_only_drops_the_answer_text_too(self):
+        host, player = self.kwestion_for(PlayerScreen.SHAPES)
+        self.assertEqual(player["kwestion"]["prompt"], "")
+        self.assertEqual(
+            [c["id"] for c in player["kwestion"]["choices"]],
+            [c["id"] for c in host["choices"]],
+        )
+        self.assertTrue(all(c["body"] == "" for c in player["kwestion"]["choices"]))
+        self.assertTrue(all(c["body"] for c in host["choices"]))
+
+    def test_remix_keeps_the_setting(self):
+        kwiz = make_kwiz(player_screen=PlayerScreen.SHAPES)
+        self.assertEqual(kwiz.remix().player_screen, PlayerScreen.SHAPES)
 
 
 class GameViewTests(TestCase):
