@@ -53,6 +53,9 @@ INSTALLED_APPS = [
     "channels",
     "allauth",
     "allauth.account",
+    "allauth.socialaccount",
+    "allauth.socialaccount.providers.github",
+    "accounts.canvasproxy",
     "accounts",
     "kwizzes",
     "games",
@@ -169,6 +172,43 @@ ACCOUNT_EMAIL_VERIFICATION = "optional"
 ACCOUNT_LOGOUT_ON_GET = False
 LOGIN_REDIRECT_URL = "kwizzes:dashboard"
 ACCOUNT_LOGOUT_REDIRECT_URL = "home"
+
+
+# Social sign-in (allauth.socialaccount)
+# Each provider appears on the sign-in page only once its client id is set.
+# GitHub sign-in reuses the KahDuke GitHub App's OAuth credentials unless
+# GITHUB_LOGIN_* names a separate OAuth app. Canvas sign-in goes through the
+# Canvas API proxy, where KahDuke is registered on the auth_only tier.
+
+SOCIALACCOUNT_ADAPTER = "accounts.adapters.SocialAccountAdapter"
+SOCIALACCOUNT_QUERY_EMAIL = True
+SOCIALACCOUNT_STORE_TOKENS = False
+SOCIALACCOUNT_PROVIDERS = {}
+
+_github_login_id = env("GITHUB_LOGIN_CLIENT_ID", default=GITHUB_APP["CLIENT_ID"])
+if _github_login_id:
+    SOCIALACCOUNT_PROVIDERS["github"] = {
+        "APPS": [
+            {
+                "client_id": _github_login_id,
+                "secret": env(
+                    "GITHUB_LOGIN_CLIENT_SECRET", default=GITHUB_APP["CLIENT_SECRET"]
+                ),
+            }
+        ],
+        "SCOPE": ["read:user", "user:email"],
+    }
+
+if env("CANVAS_PROXY_CLIENT_ID", default=""):
+    SOCIALACCOUNT_PROVIDERS["canvasproxy"] = {
+        "BASE_URL": env("CANVAS_PROXY_URL", default="https://canvas.mhciael.com"),
+        "APPS": [
+            {
+                "client_id": env("CANVAS_PROXY_CLIENT_ID"),
+                "secret": env("CANVAS_PROXY_CLIENT_SECRET", default=""),
+            }
+        ],
+    }
 
 
 # Internationalization

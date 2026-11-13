@@ -1,0 +1,13 @@
+{% load socialaccount %}
+{# Replaces allauth's bullet list with KahDuke buttons. #}
+{% get_providers as socialaccount_providers %}
+{% if socialaccount_providers %}
+<div class="actions social-sign-in">
+  {% for provider in socialaccount_providers %}
+    <a class="button{% if process != 'connect' %} primary{% endif %}"
+       href="{% provider_login_url provider process=process scope=scope auth_params=auth_params %}">
+      {% if process == "connect" %}Connect {{ provider.name }}{% else %}Sign in with {{ provider.name }}{% endif %}
+    </a>
+  {% endfor %}
+</div>
+{% endif %}
