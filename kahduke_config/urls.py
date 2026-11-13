@@ -18,6 +18,7 @@ urlpatterns = [
     path("play/", game_views.join, name="join"),
     path("kwizzes/", include("kwizzes.urls")),
     path("games/", include("games.urls")),
+    path("repos/", include("repos.urls")),
     path("accounts/", include("allauth.urls")),
     path("api/", api.urls),
     path("admin/", admin.site.urls),

@@ -7,9 +7,10 @@ dependencies = [
     "channels-redis>=4.3.0",
     "daphne>=4.2.3",
     "django>=6.1.2",
-    "django-allauth>=65.19.7",
+    "django-allauth[socialaccount]>=65.19.7",
     "django-environ>=0.14.0",
     "django-ninja>=1.7.1",
+    "pyjwt[crypto]>=2.10",
     "whitenoise>=6.12.0",
 ]
 

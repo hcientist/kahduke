@@ -65,6 +65,7 @@ def save_kwiz(kwiz, data, user):
     kwiz.description = data.description
     kwiz.visibility = data.visibility
     kwiz.reveal_mode = data.reveal_mode
+    kwiz.player_screen = data.player_screen
     kwiz.save()
 
     existing = {s.pk: s for s in kwiz.slots.all()}

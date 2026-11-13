@@ -9,11 +9,15 @@ A kwestion's reveal mode limits what anyone sees once it closes. "counts"
 sends how many picked each choice but no correctness; "hidden" sends neither,
 and neither one sends points, since those would show who was right. What a
 screen isn't allowed to show is never sent, so it can't be read off the socket.
+
+The kwiz's player screen setting works the same way: phones get the prompt
+and the answer text only if the kwiz says so; otherwise players read them off
+the projector and tap a shape.
 """
 
 from django.db.models import Count
 
-from kwizzes.models import RevealMode
+from kwizzes.models import PlayerScreen, RevealMode
 
 from .models import GameSession
 
@@ -38,6 +42,18 @@ def _kwestion(game, slot):
             for c in kwestion.choices.all()
         ],
     }
+
+
+def _for_phone(kwestion, player_screen):
+    """Strip what the kwiz keeps off players' phones."""
+    if player_screen == PlayerScreen.FULL:
+        return kwestion
+    kwestion = kwestion | {"prompt": "", "media_url": ""}
+    if player_screen == PlayerScreen.SHAPES:
+        kwestion["choices"] = [
+            {"id": c["id"], "body": "", "media_url": ""} for c in kwestion["choices"]
+        ]
+    return kwestion
 
 
 def _reveal(slot, mode):
@@ -72,6 +88,7 @@ def snapshot(game_id, player=None):
         # False when no kwestion in the kwiz reveals answers, so every score
         # is zero and there is no leaderboard to show.
         "scored": game.kwiz.has_scored_slots,
+        "player_screen": game.kwiz.player_screen,
     }
 
     if phase == "lobby":
@@ -88,6 +105,8 @@ def snapshot(game_id, player=None):
         data["leaderboard"] = _leaderboard(game)
 
     if player is not None:
+        if "kwestion" in data:
+            data["kwestion"] = _for_phone(data["kwestion"], game.kwiz.player_screen)
         player.refresh_from_db()
         me = {"id": player.id, "nickname": player.nickname}
         if data["scored"]:

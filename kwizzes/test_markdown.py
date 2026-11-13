@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AnonymousUser
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -98,6 +99,15 @@ class ParseTests(TestCase):
             markdown.parse("# T\n## Q\n{time=1}\n- [x] a\n")
         self.assertIn("Kwestion 1 (default_time_limit_sec)", ctx.exception.errors[0])
 
+    def test_players_setting(self):
+        data = markdown.parse("---\nplayers: shapes\n---\n# T\n## Q\n- [x] a\n")
+        self.assertEqual(data.player_screen, "shapes")
+        self.assertEqual(markdown.parse("# T\n## Q\n- [x] a\n").player_screen, "full")
+        kwiz = save_kwiz(Kwiz(), data, AnonymousUser())
+        self.assertIn("players: shapes\n", markdown.render(kwiz))
+        with self.assertRaises(markdown.MarkdownError):
+            markdown.parse("---\nplayers: everything\n---\n# T\n## Q\n- [x] a\n")
+
     def test_round_trip(self):
         kwiz = save_kwiz(Kwiz(), markdown.parse(SAMPLE), AnonymousUser())
         text = markdown.render(kwiz)
@@ -106,6 +116,10 @@ class ParseTests(TestCase):
 
 
 class ViewTests(TestCase):
+    def setUp(self):
+        # Start without the demo kwiz that migration 0003 seeds.
+        Kwiz.objects.all().delete()
+
     def test_import_creates_an_anonymous_kwiz(self):
         response = self.client.post(reverse("kwizzes:import"), {"markdown": SAMPLE})
         kwiz = Kwiz.objects.get()
@@ -174,3 +188,26 @@ class ViewTests(TestCase):
             reverse("kwizzes:reimport", args=[kwiz.pk]), {"markdown": SAMPLE}
         )
         self.assertEqual(response.status_code, 404)
+
+
+class DemoKwizTests(TestCase):
+    """The demo kwizzes seeded by migrations 0003 and 0004, and their
+    Markdown twins in examples/."""
+
+    def assert_matches_example(self, title, file_name):
+        kwiz = Kwiz.objects.get(title=title, owner=None)
+        path = settings.BASE_DIR / "examples" / file_name
+        self.assertEqual(markdown.render(kwiz), path.read_text())
+        self.assertEqual(markdown.parse(path.read_text()).title, title)
+        self.assertEqual(kwiz.playability_errors(), [])
+        self.assertTrue(kwiz.is_public)
+
+    def test_bridge_of_death(self):
+        self.assert_matches_example("The Bridge of Death", "bridge-of-death.md")
+
+    def test_shes_a_witch(self):
+        self.assert_matches_example("She's a Witch!", "shes-a-witch.md")
+
+    def test_filename_drops_apostrophes(self):
+        kwiz = Kwiz.objects.get(title="She's a Witch!")
+        self.assertEqual(markdown.filename(kwiz), "shes-a-witch.md")

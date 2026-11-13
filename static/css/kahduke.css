@@ -688,6 +688,9 @@ body.stage .masthead { background: var(--purple-deep); }
 .player-tiles .tile:disabled { opacity: 0.4; cursor: default; }
 .player-tiles .tile.chosen { opacity: 1; outline: 4px solid #fff; outline-offset: 3px; }
 .player-tiles .tile .shape { width: 2.75rem; height: 2.75rem; }
+.player-tiles.shapes-only { grid-template-columns: 1fr 1fr; }
+.player-tiles.shapes-only .tile { justify-content: center; }
+.player-tiles.shapes-only .tile .shape { width: 45%; height: auto; max-width: 7rem; aspect-ratio: 1; }
 
 .locked { justify-content: center; margin: 0 auto 1.5rem; width: fit-content; }
 
@@ -771,3 +774,10 @@ body.stage .masthead { background: var(--purple-deep); }
 
 textarea.mono, pre.mono { font-family: ui-monospace, monospace; font-size: var(--step--1); }
 pre.mono { white-space: pre-wrap; overflow-x: auto; }
+
+.narrow-form { max-width: 36rem; }
+.stack .hint { margin: 0.25rem 0 0; color: var(--ink-muted); font-size: var(--step--1); }
+.stack p.error { margin: 0.25rem 0 0; color: var(--danger); font-size: var(--step--1); }
+.kwiz-row form.inline { margin-left: auto; }
+
+.social-sign-in { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0.5rem 0 1rem; }

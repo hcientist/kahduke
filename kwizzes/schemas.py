@@ -35,6 +35,7 @@ class KwestionIn(Schema):
 
 
 RevealModeName = Literal["full", "counts", "hidden"]
+PlayerScreenName = Literal["full", "answers", "shapes"]
 
 
 class SlotIn(Schema):
@@ -52,6 +53,7 @@ class KwizIn(Schema):
     description: str = ""
     visibility: Literal["private", "public"] = "private"
     reveal_mode: RevealModeName = "full"
+    player_screen: PlayerScreenName = "full"
     slots: list[SlotIn] = []
 
 
@@ -101,6 +103,7 @@ class KwizOut(Schema):
     description: str
     visibility: str
     reveal_mode: str
+    player_screen: str
     owner: str | None
     remixed_from_id: int | None
     updated_at: datetime
