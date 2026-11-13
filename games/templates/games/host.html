@@ -7,7 +7,7 @@
 {% block main_class %}stage-main{% endblock %}
 
 {% block content %}
-<div id="game" data-role="host" data-shortcode="{{ game.shortcode }}" data-join-url="{{ join_url }}" data-done-url="{% url 'kwizzes:dashboard' %}">
+<div id="game" data-role="host" data-shortcode="{{ game.shortcode }}" data-join-url="{{ join_url }}" data-share-url="{{ share_url }}" data-done-url="{% url 'kwizzes:dashboard' %}">
   <p class="stage-wait">Connecting…</p>
 </div>
 {% endblock %}

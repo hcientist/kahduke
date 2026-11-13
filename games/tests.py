@@ -167,6 +167,27 @@ class GameViewTests(TestCase):
         response = player_client.get(reverse("games:host", args=[game.shortcode]))
         self.assertEqual(response.status_code, 404)
 
+    def test_host_screen_has_a_share_link(self):
+        kwiz = make_kwiz(visibility=Kwiz.Visibility.PUBLIC)
+        self.client.post(reverse("games:start", args=[kwiz.pk]))
+        game = GameSession.objects.get()
+        response = self.client.get(reverse("games:host", args=[game.shortcode]))
+        self.assertContains(
+            response, f'data-share-url="http://testserver/play/?code={game.shortcode}"'
+        )
+
+    def test_invite_link_preview_names_the_kwiz(self):
+        game = GameSession.start_for(make_kwiz())
+        response = self.client.get(reverse("join"), {"code": game.shortcode})
+        self.assertContains(
+            response, '<meta property="og:title" content="Join “Sorting” on KahDuke">'
+        )
+        self.assertContains(response, f"Game code {game.shortcode}.")
+        self.assertContains(response, "autofocus")
+        game.end()
+        response = self.client.get(reverse("join"), {"code": game.shortcode})
+        self.assertContains(response, '<meta property="og:title" content="KahDuke">')
+
     def test_private_kwiz_cannot_be_hosted_by_strangers(self):
         kwiz = make_kwiz()
         response = self.client.post(reverse("games:start", args=[kwiz.pk]))

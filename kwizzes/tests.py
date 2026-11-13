@@ -303,3 +303,20 @@ class AnonymousCreatorTests(TestCase):
         response = self.client.post(reverse("kwizzes:remix", args=[kwiz.pk]))
         copy = Kwiz.objects.get(remixed_from=kwiz)
         self.assertRedirects(response, reverse("kwizzes:edit", args=[copy.pk]))
+
+    def test_link_previews(self):
+        response = self.client.get(reverse("home"))
+        self.assertContains(response, '<meta property="og:title" content="KahDuke">')
+        self.assertContains(
+            response,
+            '<meta property="og:image" content="http://testserver/static/img/og-card.png">',
+        )
+        kwiz = make_kwiz(visibility=Kwiz.Visibility.PUBLIC)
+        kwiz.description = "Line one\nwith <b>tags</b> & such"
+        kwiz.save()
+        response = self.client.get(reverse("kwizzes:detail", args=[kwiz.pk]))
+        self.assertContains(response, '<meta property="og:title" content="Sorting">')
+        self.assertContains(
+            response,
+            '<meta property="og:description" content="Line one\nwith tags &amp; such">',
+        )
