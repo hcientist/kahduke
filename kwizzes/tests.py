@@ -303,3 +303,13 @@ class AnonymousCreatorTests(TestCase):
         response = self.client.post(reverse("kwizzes:remix", args=[kwiz.pk]))
         copy = Kwiz.objects.get(remixed_from=kwiz)
         self.assertRedirects(response, reverse("kwizzes:edit", args=[copy.pk]))
+
+    def test_footer_links_to_the_repo(self):
+        repo = "https://github.com/hcientist/kahduke"
+        self.assertContains(self.client.get(reverse("home")), repo)
+        kwiz = make_kwiz(visibility=Kwiz.Visibility.PUBLIC)
+        self.client.post(reverse("games:start", args=[kwiz.pk]))
+        game = kwiz.games.get()
+        # Not on the projector.
+        response = self.client.get(reverse("games:host", args=[game.shortcode]))
+        self.assertNotContains(response, repo)

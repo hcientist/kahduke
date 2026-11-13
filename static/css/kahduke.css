@@ -133,6 +133,20 @@ a:hover { color: var(--teal-deep); }
 }
 .page.narrow { max-width: 34rem; }
 
+.site-foot {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 0.25rem 1rem;
+  padding: 1.25rem var(--gutter) 2rem;
+  border-top: 1px solid var(--rule);
+  color: var(--ink-muted);
+  font-size: var(--step--1);
+}
+.site-foot a { display: inline-flex; align-items: center; gap: 0.4rem; font-weight: 700; }
+body.stage .site-foot { border-top-color: rgb(255 255 255 / 0.15); color: rgb(255 255 255 / 0.75); }
+
 .lede { font-size: var(--step-1); color: var(--ink-muted); max-width: 40em; }
 
 .messages {
