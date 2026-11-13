@@ -545,7 +545,18 @@ body.stage .masthead { background: var(--purple-deep); }
   text-align: center;
 }
 .lobby-how { margin: 0; font-size: var(--step-2); }
-.lobby-how strong { color: var(--cs-ice); }
+.lobby-how a { color: var(--cs-ice); font-weight: 700; text-decoration: none; }
+.lobby-how a:hover { text-decoration: underline; }
+.lobby-share {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem 0.75rem;
+  margin: 0 0 0.5rem;
+  max-width: 100%;
+}
+.lobby-share a { color: var(--cs-ice); overflow-wrap: anywhere; }
 
 .shortcode {
   display: flex;
@@ -771,3 +782,6 @@ body.stage .masthead { background: var(--purple-deep); }
 /* Reveal-mode settings in the editor. */
 .visibility .hint { margin: 0.35rem 0 0; color: var(--ink-muted); font-size: var(--step--1); }
 .overrides .reveal-override { display: block; margin-top: 0.5rem; }
+
+textarea.mono, pre.mono { font-family: ui-monospace, monospace; font-size: var(--step--1); }
+pre.mono { white-space: pre-wrap; overflow-x: auto; }

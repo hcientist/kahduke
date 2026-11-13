@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 
 {% block title %}{{ kwiz.title }} · KahDuke{% endblock %}
+{% block link_preview %}{% include "_link_preview.html" with og_title=kwiz.title og_description=kwiz.description|default:"A kwiz on KahDuke. Host it for your class, or remix it into your own." %}{% endblock %}
 
 {% block content %}
 <div class="kwiz-head">
@@ -19,7 +20,9 @@
     {% endif %}
     {% if can_edit %}
       <a class="button" href="{% url 'kwizzes:edit' kwiz.pk %}">Edit</a>
+      <a class="button quiet" href="{% url 'kwizzes:reimport' kwiz.pk %}">Edit as Markdown</a>
     {% endif %}
+    <a class="button quiet" href="{% url 'kwizzes:export' kwiz.pk %}?download">Download .md</a>
     <form method="post" action="{% url 'kwizzes:remix' kwiz.pk %}" class="inline">
       {% csrf_token %}
       <button type="submit" class="button quiet">Remix into my own copy</button>

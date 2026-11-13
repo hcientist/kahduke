@@ -108,8 +108,10 @@
         h("p", { class: "stage-title" }, state.kwiz_title),
         h("button", { class: "button quiet small", onclick: () => confirmEnd() }, "End game")),
       h("section", { class: "lobby" },
-        h("p", { class: "lobby-how" }, "Go to ", h("strong", {}, root.dataset.joinUrl), " and enter"),
+        h("p", { class: "lobby-how" }, "Go to ",
+          h("a", { href: root.dataset.joinUrl, target: "_blank" }, bare(root.dataset.joinUrl)), " and enter"),
         h("p", { class: "shortcode", "aria-label": `Game code ${state.shortcode}` }, digits),
+        shareLink(root.dataset.shareUrl),
         h("p", { class: "lobby-count" },
           state.player_count === 0
             ? "Waiting for players to join"
@@ -122,6 +124,43 @@
           onclick: () => send("start"),
         }, "Start the kwiz")),
     );
+  }
+
+  // "https://host/play/" -> "host/play", for reading off a projector.
+  function bare(url) {
+    return url.replace(/^https?:\/\//, "").replace(/\/$/, "");
+  }
+
+  // The invite link, with the code already filled in, for pasting into chat
+  // or a course page. Copy works on any https page; Share only where the
+  // browser has a share sheet (phones, mostly).
+  function shareLink(url) {
+    const flash = (button, text) => {
+      const label = button.textContent;
+      button.textContent = text;
+      setTimeout(() => { button.textContent = label; }, 2000);
+    };
+    const copy = h("button", {
+      type: "button",
+      class: "button small",
+      onclick: async (event) => {
+        const button = event.currentTarget;
+        try {
+          await navigator.clipboard.writeText(url);
+          flash(button, "Copied!");
+        } catch {
+          getSelection().selectAllChildren(link);
+          flash(button, "Press Ctrl+C");
+        }
+      },
+    }, "Copy link");
+    const share = navigator.share && h("button", {
+      type: "button",
+      class: "button small",
+      onclick: () => navigator.share({ title: "Join my KahDuke game", url }).catch(() => {}),
+    }, "Share…");
+    const link = h("a", { href: url, target: "_blank" }, bare(url));
+    return h("p", { class: "lobby-share" }, "Invite link: ", link, copy, share);
   }
 
   function kwestionHeader(state) {

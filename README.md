@@ -114,6 +114,12 @@ The `Dockerfile` is the course's `Dockerfile.example` with these changes:
   `kwizzes/schemas.py` and the save logic is in `kwizzes/editing.py`. Writes
   require a CSRF token even for anonymous users. Interactive API docs are at
   `/api/docs`.
+- **Markdown.** `kwizzes/markdown.py` parses a kwiz written in Markdown into
+  the same `KwizIn` payload the editor sends, and renders a kwiz back. The
+  format is documented at the top of that file and on the import page
+  (`/kwizzes/import/`). Every kwiz has a "Download .md" link, and its editors
+  get "Edit as Markdown", which re-imports in place: kwestions and choices are
+  matched by position, so earlier games keep their responses.
 - **Live games.** `games/consumers.py` gives each screen one socket. The host
   sends `start`, `close`, `next` and `end`; players send `answer`. After every
   change the server tells each screen to refresh, and each one gets its own

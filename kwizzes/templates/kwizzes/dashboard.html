@@ -5,7 +5,7 @@
 {% block content %}
 <div class="kwiz-head">
   <h1>My kwizzes</h1>
-  <p class="actions"><a class="button primary" href="{% url 'kwizzes:create' %}">Write a kwiz</a></p>
+  <p class="actions"><a class="button primary" href="{% url 'kwizzes:create' %}">Write a kwiz</a> <a class="button quiet" href="{% url 'kwizzes:import' %}">Import Markdown</a></p>
 </div>
 
 {% if not user.is_authenticated %}
