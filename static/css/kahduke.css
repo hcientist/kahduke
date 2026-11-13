@@ -677,6 +677,9 @@ body.stage .masthead { background: var(--purple-deep); }
 .player-tiles .tile:disabled { opacity: 0.4; cursor: default; }
 .player-tiles .tile.chosen { opacity: 1; outline: 4px solid #fff; outline-offset: 3px; }
 .player-tiles .tile .shape { width: 2.75rem; height: 2.75rem; }
+.player-tiles.shapes-only { grid-template-columns: 1fr 1fr; }
+.player-tiles.shapes-only .tile { justify-content: center; }
+.player-tiles.shapes-only .tile .shape { width: 45%; height: auto; max-width: 7rem; aspect-ratio: 1; }
 
 .locked { justify-content: center; margin: 0 auto 1.5rem; width: fit-content; }
 

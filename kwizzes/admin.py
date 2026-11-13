@@ -24,7 +24,7 @@ class KwizAdmin(admin.ModelAdmin):
         "remixed_from",
         "updated_at",
     )
-    list_filter = ("visibility", "reveal_mode")
+    list_filter = ("visibility", "reveal_mode", "player_screen")
     search_fields = ("title", "description")
     readonly_fields = ("edit_token",)
     inlines = [KwizKwestionInline]

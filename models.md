@@ -20,6 +20,7 @@ erDiagram
         text description
         enum visibility "private | public"
         enum reveal_mode "full | counts | hidden"
+        enum player_screen "full | answers | shapes"
         uuid remixed_from_kwiz_id FK "? self-ref, source of a remix"
         datetime created_at
         datetime updated_at
