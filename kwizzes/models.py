@@ -22,6 +22,19 @@ class RevealMode(models.TextChoices):
     HIDDEN = "hidden", "Show nothing"
 
 
+class PlayerScreen(models.TextChoices):
+    """How much of each kwestion players see on their phones.
+
+    With less, the room has to read the projector: "answers" leaves the
+    kwestion itself off the phones, and "shapes" leaves only the four shapes
+    to tap. What a phone isn't meant to show is never sent to it.
+    """
+
+    FULL = "full", "The kwestion and its answers"
+    ANSWERS = "answers", "Only the answers"
+    SHAPES = "shapes", "Only the answer shapes"
+
+
 class Kwiz(models.Model):
     class Visibility(models.TextChoices):
         PRIVATE = "private", "Private"
@@ -46,6 +59,12 @@ class Kwiz(models.Model):
         choices=RevealMode,
         default=RevealMode.FULL,
         help_text="Default for every kwestion; each slot can override it.",
+    )
+    player_screen = models.CharField(
+        max_length=10,
+        choices=PlayerScreen,
+        default=PlayerScreen.FULL,
+        help_text="How much of each kwestion players see on their phones.",
     )
     remixed_from = models.ForeignKey(
         "self",
@@ -110,6 +129,7 @@ class Kwiz(models.Model):
             title=self.title,
             description=self.description,
             reveal_mode=self.reveal_mode,
+            player_screen=self.player_screen,
             remixed_from=self,
         )
         for slot in self.ordered_slots().prefetch_related("kwestion__choices"):

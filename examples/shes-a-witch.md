@@ -1,6 +1,7 @@
 ---
 visibility: public
 reveal: full
+players: full
 ---
 
 # She's a Witch!

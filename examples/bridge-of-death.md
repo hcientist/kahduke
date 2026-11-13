@@ -1,6 +1,7 @@
 ---
 visibility: public
 reveal: full
+players: full
 ---
 
 # The Bridge of Death

@@ -99,6 +99,15 @@ class ParseTests(TestCase):
             markdown.parse("# T\n## Q\n{time=1}\n- [x] a\n")
         self.assertIn("Kwestion 1 (default_time_limit_sec)", ctx.exception.errors[0])
 
+    def test_players_setting(self):
+        data = markdown.parse("---\nplayers: shapes\n---\n# T\n## Q\n- [x] a\n")
+        self.assertEqual(data.player_screen, "shapes")
+        self.assertEqual(markdown.parse("# T\n## Q\n- [x] a\n").player_screen, "full")
+        kwiz = save_kwiz(Kwiz(), data, AnonymousUser())
+        self.assertIn("players: shapes\n", markdown.render(kwiz))
+        with self.assertRaises(markdown.MarkdownError):
+            markdown.parse("---\nplayers: everything\n---\n# T\n## Q\n- [x] a\n")
+
     def test_round_trip(self):
         kwiz = save_kwiz(Kwiz(), markdown.parse(SAMPLE), AnonymousUser())
         text = markdown.render(kwiz)
