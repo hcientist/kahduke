@@ -1,0 +1,20 @@
+# Keeps the accessibility scanner and the workflows' actions up to date.
+# New axe-core releases can add rules, so an update may surface new
+# violations in the accessibility issue: that's expected, not a regression.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /a11y
+    schedule:
+      interval: weekly
+    groups:
+      a11y-scanner:
+        patterns: ["*"]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ["*"]

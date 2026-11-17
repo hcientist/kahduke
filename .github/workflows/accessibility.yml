@@ -1,0 +1,145 @@
+name: Accessibility
+
+# Scans every page (signed out, signed in, and a whole game's host and player
+# screens) with axe-core. On main, any violations go into one open issue
+# labelled "accessibility", which is updated on each run and closed once a
+# complete run is clean. On pull requests the report goes in the run summary.
+#
+# The job fails when the scan is incomplete: a page failed to load, a game
+# step broke, or a Django route is neither scanned nor excluded. That usually
+# means the app changed and a11y/scan.mjs needs updating (see a11y/README.md).
+# Violations alone don't fail it.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: accessibility-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      DEBUG: "False"
+      ALLOWED_HOSTS: localhost,127.0.0.1
+      SECRET_KEY: a11y-scan-not-secret
+      BASE_URL: http://127.0.0.1:8000
+      A11Y_USER: a11ybot
+      A11Y_PASSWORD: a11y-scan-password-${{ github.run_id }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v6
+
+      - name: Install the app
+        run: uv sync --frozen
+
+      - name: Set up the database
+        env:
+          DJANGO_SUPERUSER_USERNAME: ${{ env.A11Y_USER }}
+          DJANGO_SUPERUSER_EMAIL: a11ybot@example.com
+          DJANGO_SUPERUSER_PASSWORD: ${{ env.A11Y_PASSWORD }}
+        run: |
+          uv run python manage.py migrate --noinput
+          uv run python manage.py seed_demo
+          uv run python manage.py createsuperuser --noinput
+          uv run python manage.py collectstatic --noinput
+          uv run python a11y/app_info.py > a11y/app.json
+
+      - name: Start the server
+        run: |
+          nohup uv run daphne -b 127.0.0.1 -p 8000 kahduke_config.asgi:application > server.log 2>&1 &
+          for _ in $(seq 30); do
+            curl -sf -o /dev/null "$BASE_URL/" && exit 0
+            sleep 1
+          done
+          cat server.log
+          exit 1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install the scanner
+        working-directory: a11y
+        run: |
+          npm ci --no-audit --no-fund
+          npx playwright install --with-deps chromium
+
+      - name: Scan
+        working-directory: a11y
+        run: node scan.mjs
+
+      - name: Summarize
+        if: always() && hashFiles('a11y/a11y-report.md') != ''
+        run: cat a11y/a11y-report.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload the report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: a11y-report
+          path: |
+            a11y/a11y-report.md
+            a11y/a11y-results.json
+            a11y/app.json
+            server.log
+          if-no-files-found: ignore
+
+      # Runs even when the scan was incomplete, so violations it did find are
+      # still filed, but it never closes the issue after an incomplete scan.
+      - name: File or update the issue
+        if: always() && github.ref == 'refs/heads/main' && hashFiles('a11y/a11y-results.json') != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        working-directory: a11y
+        run: |
+          label=accessibility
+          title="Accessibility violations found by automated scan"
+          total=$(jq .total a11y-results.json)
+          complete=$(jq .complete a11y-results.json)
+          existing=$(gh issue list --state open --label "$label" --author "app/github-actions" \
+            --json number --jq '.[0].number // empty')
+
+          if [ "$total" -eq 0 ]; then
+            echo "No violations."
+            if [ "$complete" != true ]; then
+              echo "The scan was incomplete, so leaving any open issue as it is."
+            elif [ -n "$existing" ]; then
+              gh issue close "$existing" --comment "The scan in $RUN_URL found no violations. Closing."
+            fi
+            exit 0
+          fi
+
+          {
+            echo "_Updated by the [Accessibility workflow]($RUN_URL) for ${GITHUB_SHA::7}. The full report and JSON results are attached to the run._"
+            echo
+            cat a11y-report.md
+          } > body.md
+          # GitHub caps issue bodies at 65,536 characters.
+          if [ "$(wc -c < body.md)" -gt 65000 ]; then
+            head -c 64000 body.md > body.tmp
+            printf '\n\n…truncated. Download the full report from %s\n' "$RUN_URL" >> body.tmp
+            mv body.tmp body.md
+          fi
+
+          gh label create "$label" --color 450084 \
+            --description "Found by the accessibility scan" 2>/dev/null || true
+          if [ -n "$existing" ]; then
+            gh issue edit "$existing" --title "$title" --body-file body.md
+            note=""
+            [ "$complete" = true ] || note=" The scan was incomplete, so there may be more; see Scan problems in the issue body."
+            gh issue comment "$existing" --body "Still $total failing elements as of $RUN_URL.$note"
+          else
+            gh issue create --title "$title" --label "$label" --body-file body.md
+          fi

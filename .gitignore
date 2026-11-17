@@ -6,3 +6,7 @@ db.sqlite3
 staticfiles/
 .DS_Store
 .ruff_cache/
+a11y/node_modules/
+a11y/a11y-report.md
+a11y/a11y-results.json
+a11y/app.json

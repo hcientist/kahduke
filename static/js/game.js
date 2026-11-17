@@ -122,6 +122,7 @@
           class: "button primary big",
           disabled: state.player_count === 0,
           onclick: () => send("start"),
+          "data-testid": "start-game",
         }, "Start the kwiz")),
     );
   }
@@ -218,7 +219,11 @@
         h("ol", { class: "tiles" },
           k.choices.map((c, i) => h("li", { class: `tile tile-${i % 4}` }, shape(i), h("span", {}, c.body))))),
       h("footer", { class: "stage-foot" },
-        h("button", { class: "button quiet", onclick: () => send("close") }, "Show results now")),
+        h("button", {
+          class: "button quiet",
+          onclick: () => send("close"),
+          "data-testid": "close-kwestion",
+        }, "Show results now")),
     );
     clock.start();
   }
@@ -274,8 +279,12 @@
         h("h2", {}, "Top scores"),
         leaderboard(state.leaderboard)) : null,
       h("footer", { class: "stage-foot" },
-        h("button", { class: "button primary big", onclick: () => send("next") },
-          last ? "Show final results" : "Next kwestion")),
+        h("button", {
+          class: "button primary big",
+          onclick: () => send("next"),
+          "data-testid": "next-kwestion",
+          "data-last": last,
+        }, last ? "Show final results" : "Next kwestion")),
     );
   }
 
@@ -291,7 +300,7 @@
   }
 
   function playerLobby(state) {
-    show(h("section", { class: "stage-card" },
+    show(h("section", { class: "stage-card", "data-testid": "player-lobby" },
       h("h1", {}, `You're in, ${state.me.nickname}`),
       h("p", {}, "Watch the host's screen. The first kwestion appears here when they start."),
       h("p", { class: "lobby-count" }, `${state.player_count} player${state.player_count === 1 ? "" : "s"} in`)));
@@ -301,7 +310,7 @@
     const k = state.kwestion;
     if (state.me.answered_choice_id != null) {
       const i = k.choices.findIndex((c) => c.id === state.me.answered_choice_id);
-      show(h("section", { class: "stage-card" },
+      show(h("section", { class: "stage-card", "data-testid": "answer-locked" },
         h("p", { class: `locked tile tile-${i % 4}` }, shape(i), body(k.choices[i])),
         h("h1", {}, "Answer locked in"),
         h("p", {}, `${state.answered} of ${state.player_count} answered`)));
@@ -317,6 +326,7 @@
       h("div", { class: `tiles player-tiles${shapesOnly ? " shapes-only" : ""}` },
         k.choices.map((c, i) => h("button", {
           class: `tile tile-${i % 4}`,
+          "data-testid": "answer-choice",
           onclick: (e) => {
             root.querySelectorAll(".player-tiles button").forEach((b) => { b.disabled = true; });
             e.currentTarget.classList.add("chosen");
@@ -334,7 +344,7 @@
       // Don't say whether the answer was right: just that it counted.
       const k = state.kwestion;
       const i = k.choices.findIndex((c) => c.id === me.answered_choice_id);
-      show(h("section", { class: "stage-card" },
+      show(h("section", { class: "stage-card", "data-testid": "player-result" },
         i >= 0 ? h("p", { class: `locked tile tile-${i % 4}` }, shape(i), body(k.choices[i])) : null,
         h("h1", {}, i >= 0 ? "Answer recorded" : "Time's up"),
         state.reveal_mode === "counts" ? revealTiles(k, state, "player-counts") : null,
@@ -347,7 +357,10 @@
     if (!answered) headline = "Time's up";
     else if (points > 0) headline = `+${points.toLocaleString()} points`;
     else headline = "Not this time";
-    show(h("section", { class: `stage-card result ${points > 0 ? "gained" : "missed"}` },
+    show(h("section", {
+      class: `stage-card result ${points > 0 ? "gained" : "missed"}`,
+      "data-testid": "player-result",
+    },
       h("h1", {}, headline),
       standing(state)));
   }
@@ -366,7 +379,7 @@
       // Nothing was revealed, so there are no scores to rank.
       show(
         h("header", { class: "stage-head" }, h("p", { class: "stage-title" }, state.kwiz_title)),
-        h("section", { class: "final" }, h("h1", {}, "That's the end"),
+        h("section", { class: "final", "data-testid": "final-results" }, h("h1", {}, "That's the end"),
           h("p", {}, "Thanks for playing."), done));
       return;
     }
@@ -378,7 +391,7 @@
     show(
       h("header", { class: "stage-head" },
         h("p", { class: "stage-title" }, state.kwiz_title)),
-      h("section", { class: "final" },
+      h("section", { class: "final", "data-testid": "final-results" },
         h("h1", {}, "Final results"),
         h("ol", { class: "podium" }, step(second, 2), step(first, 1), step(third, 3)),
         state.me ? h("p", { class: "final-me" },
