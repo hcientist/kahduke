@@ -55,7 +55,13 @@ def walk(patterns, route="", regex="", namespace=""):
             }
 
 
-demo = Kwiz.objects.filter(title=DEMO_TITLE, owner=None).first()
+# Remixes made without signing in also have no owner and the same title.
+demo = Kwiz.objects.filter(
+    title=DEMO_TITLE,
+    owner=None,
+    remixed_from=None,
+    visibility=Kwiz.Visibility.PUBLIC,
+).first()
 json.dump(
     {
         "routes": list(walk(get_resolver().url_patterns)),
