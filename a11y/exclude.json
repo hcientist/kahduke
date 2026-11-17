@@ -1,0 +1,17 @@
+[
+  { "route": "admin/*", "skip": true, "why": "Django admin: third-party UI, staff only" },
+  { "route": "api/*", "skip": true, "why": "JSON API and its generated docs" },
+  { "route": "accounts/logout/", "skip": true, "why": "signs the crawler out" },
+  { "route": "accounts/github/*", "skip": true, "why": "leaves for GitHub sign-in" },
+  { "route": "accounts/canvasproxy/*", "skip": true, "why": "leaves for Canvas sign-in" },
+  { "route": "repos/github/*", "skip": true, "why": "GitHub App install, OAuth callback and webhook" },
+  { "route": "kwizzes/<int:pk>/markdown/", "skip": true, "why": "Markdown download, not a page" },
+  { "route": "kwizzes/<int:pk>/remix/", "why": "POST only; signed-in setup uses it and scans the editor it opens" },
+  { "route": "kwizzes/<int:pk>/delete/", "why": "POST only, with no page of its own" },
+  { "route": "games/host/<int:kwiz_id>/", "why": "POST only; the game flow uses it and scans the host screen" },
+  { "route": "repos/<int:pk>/*", "why": "needs a connected GitHub App installation, which CI doesn't have" },
+  { "route": "repos/linked/*", "why": "POST only, and needs a connected GitHub repo" },
+  { "route": "accounts/login/code/confirm/", "why": "needs a sign-in by emailed code in progress" },
+  { "route": "accounts/3rdparty/signup/", "why": "needs a GitHub or Canvas sign-in in progress" },
+  { "route": "accounts/social/signup/", "why": "old alias of accounts/3rdparty/signup/" }
+]

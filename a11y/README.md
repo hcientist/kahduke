@@ -23,7 +23,7 @@ problems" section of the run summary says what went wrong:
 
 | Problem | What to do |
 | --- | --- |
-| `route not scanned: …` | You added a page the scan doesn't reach. Link to it from a page that is scanned, add it to a crawl's start paths, or add it to `EXCLUDE` with a reason. |
+| `route not scanned: …` | You added a page the scan doesn't reach. Link to it from a page that is scanned, add it to a crawl's start paths, or add it to [`EXCLUDE`](./exclude.json) with a reason. |
 | `EXCLUDE entry "…" matches no route` | A route was renamed or removed. Update or delete the entry. |
 | `game step "…"` or `signed-in setup` | A control the flow uses has gone. Check that the `data-testid` attributes are still there (see below). |
 | `HTTP 4xx/5xx` | A linked page is broken. If it returns that status on purpose, add it to `ERROR_STATUS`. |
@@ -41,7 +41,7 @@ problems" section of the run summary says what went wrong:
     `answer-locked`, `player-result`, `final-results`
 - **Form field names.** It fills in `nickname`, and allauth's `login` and
   `password` fields.
-- **`EXCLUDE` in `scan.mjs`.** Add any new route that changes data on GET,
+- **[`exclude.json`](./exclude.json).** Add any new route that changes data on GET,
   signs out, leaves the site, or isn't an HTML page, with `skip: true`. The
   crawler is signed in as a superuser and follows every link it finds.
 - **The demo kwiz.** `app_info.py` finds it by the title that

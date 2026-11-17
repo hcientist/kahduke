@@ -3,7 +3,7 @@
 // It crawls the site twice, signed out and signed in, following every
 // same-origin link, and plays one whole game (host and player screens), since
 // those screens are drawn by JavaScript and have no links to follow. Then it
-// checks that every Django route was scanned or is listed in EXCLUDE below.
+// checks that every Django route was scanned or is listed in exclude.json.
 //
 // Writes a11y-report.md and a11y-results.json to the current directory.
 // Exit codes:
@@ -46,29 +46,18 @@ try {
 }
 const ROUTES = app.routes.map((r) => ({ ...r, re: new RegExp(r.regex) }));
 
-// Routes the scan doesn't cover, and why. `route` is the Django route as
-// app_info.py prints it; a trailing "*" matches every route under it.
-// `skip: true` also stops the crawler from following links to those routes:
-// use it for anything that changes data on GET, signs out, leaves the site,
-// or isn't an HTML page. A route that's neither scanned nor listed here fails
-// the scan, and so does an entry here that no longer matches any route.
-const EXCLUDE = [
-  { route: "admin/*", skip: true, why: "Django admin: third-party UI, staff only" },
-  { route: "api/*", skip: true, why: "JSON API and its generated docs" },
-  { route: "accounts/logout/", skip: true, why: "signs the crawler out" },
-  { route: "accounts/github/*", skip: true, why: "leaves for GitHub sign-in" },
-  { route: "accounts/canvasproxy/*", skip: true, why: "leaves for Canvas sign-in" },
-  { route: "repos/github/*", skip: true, why: "GitHub App install, OAuth callback and webhook" },
-  { route: "kwizzes/<int:pk>/markdown/", skip: true, why: "Markdown download, not a page" },
-  { route: "kwizzes/<int:pk>/remix/", why: "POST only; signed-in setup uses it and scans the editor it opens" },
-  { route: "kwizzes/<int:pk>/delete/", why: "POST only, with no page of its own" },
-  { route: "games/host/<int:kwiz_id>/", why: "POST only; the game flow uses it and scans the host screen" },
-  { route: "repos/<int:pk>/*", why: "needs a connected GitHub App installation, which CI doesn't have" },
-  { route: "repos/linked/*", why: "POST only, and needs a connected GitHub repo" },
-  { route: "accounts/login/code/confirm/", why: "needs a sign-in by emailed code in progress" },
-  { route: "accounts/3rdparty/signup/", why: "needs a GitHub or Canvas sign-in in progress" },
-  { route: "accounts/social/signup/", why: "old alias of accounts/3rdparty/signup/" },
-];
+// Routes the scan doesn't cover, and why, from exclude.json (next to this
+// script). Each entry has:
+//   route  the Django route as app_info.py prints it; a trailing "*" matches
+//          every route under it
+//   why    the reason, shown in the report
+//   skip   optional; true also stops the crawler from following links to
+//          those routes. Use it for anything that changes data on GET, signs
+//          out, leaves the site, or isn't an HTML page.
+// A route that's neither scanned nor listed there fails the scan, and so does
+// an entry there that no longer matches any route.
+const EXCLUDE_FILE = new URL("exclude.json", import.meta.url);
+const EXCLUDE = JSON.parse(await readFile(EXCLUDE_FILE, "utf8"));
 
 // Pages that answer with an error status on purpose.
 const ERROR_STATUS = {
@@ -352,13 +341,13 @@ function checkCoverage() {
     if (!covered.has(r.route) && !excludedBy(r)) {
       problems.push(
         `route not scanned: ${r.route}${r.name ? ` (${r.name})` : ""}. ` +
-          "Link to it, add it to a crawl's start paths, or add it to EXCLUDE in a11y/scan.mjs with a reason.",
+          "Link to it, add it to a crawl's start paths, or add it to a11y/exclude.json with a reason.",
       );
     }
   }
   for (const e of EXCLUDE) {
     if (!routes.some((r) => excludedBy(r) === e)) {
-      problems.push(`EXCLUDE entry "${e.route}" matches no route; remove it from a11y/scan.mjs`);
+      problems.push(`EXCLUDE entry "${e.route}" matches no route; remove it from a11y/exclude.json`);
     }
   }
 }
